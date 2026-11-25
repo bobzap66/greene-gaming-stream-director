@@ -6,7 +6,13 @@ Independent spectator camera for Foundry VTT v14. Designed for a dedicated non-G
 
 Manifest: https://github.com/bobzap66/greene-gaming-stream-director/releases/latest/download/module.json
 
-Enable the module in your world, select your observer account, disable Monk's Screen and Vision tracking, then enable the spectator camera and reload clients. Give the observer Observer access to party actors. No actor permissions are modified by this module.
+Enable the module in your world, select your observer account, disable Monk's Screen, Party Screen and Vision tracking, then enable the spectator camera and reload clients. Give the observer Observer access to individual party actors and the Party actor where applicable. No actor permissions are modified by this module.
+
+## v0.2.1
+
+Responsive safe-area framing reconciles the actual camera position, prioritizes fitting over the legacy minimum zoom, and uses a configurable proportional margin in layout mode. During exploration, moving a visible Party actor token selects it; moving a member of the largest individual cluster selects individual framing. On a fresh scene, individual characters take precedence if present. Active combat always takes precedence. Monk's Party Screen must be disabled.
+
+The layout editor adds encounter tracker and reserved OBS reference regions, numerical controls, and per-element positioning settings. Reserved regions are visual guides only: configure the camera and other regions to avoid them. Existing regions are retained. Chat positioning compensates for interface scale; artwork preserves aspect ratio; journals and encounter tracker use persistent CSS. Live Foundry/OBS regression testing of the integrated release is required.
 
 ## v0.2.0
 
