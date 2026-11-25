@@ -1,0 +1,18 @@
+{
+  "id": "greene-gaming-stream-director",
+  "title": "Greene Gaming Stream Director",
+  "description": "Independent spectator camera and broadcast tools for Foundry VTT.",
+  "version": "0.1.0",
+  "compatibility": {
+    "minimum": "14"
+  },
+  "authors": [
+    {
+      "name": "Greene Gaming"
+    }
+  ],
+  "esmodules": [
+    "scripts/main.js"
+  ],
+  "url": "https://github.com/bobzap66/greene-gaming-stream-director"
+}
