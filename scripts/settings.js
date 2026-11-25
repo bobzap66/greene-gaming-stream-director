@@ -1,14 +1,22 @@
 export const ID="greene-gaming-stream-director";
-export const defaults={groupDistance:8,padding:2,minZoom:.4,maxZoom:1.5,transition:750};
-export const defaultRegions={camera:{x:3,y:15,w:75,h:80},art:{x:5,y:16,w:70,h:76},chat:{x:79,y:15,w:18,h:78}};
+export const defaults={groupDistance:8,padding:2,minZoom:.4,maxZoom:1.5,transition:750,frameMargin:20};
+export const defaultRegions={camera:{x:3,y:15,w:75,h:80},art:{x:5,y:16,w:70,h:76},chat:{x:79,y:15,w:18,h:78},combat:{x:6,y:21,w:18,h:30},reserved:{x:0,y:82,w:100,h:18}};
+export function refreshObserverChoices(){
+ const config=game.settings.settings.get(ID+".observerId");if(!config)return;
+ const choices={"":"Not selected",...Object.fromEntries(Array.from(game.users??[]).filter(u=>!u.isGM).map(u=>[u.id,u.name]))};
+ const saved=setting("observerId");if(saved&&!choices[saved])choices[saved]="Unavailable observer ("+saved+")";
+ config.choices=choices;
+}
 export function registerSettings(){
  const register=(key,data)=>game.settings.register(ID,key,{scope:"world",config:true,requiresReload:true,...data});
- register("observerId",{name:"Stream observer",hint:"Dedicated non-GM account.",type:String,default:"",choices:{"":"Not selected",...Object.fromEntries(Array.from(game.users??[]).filter(u=>!u.isGM).map(u=>[u.id,u.name]))}});
- register("enabled",{name:"Enable spectator camera",hint:"Disable Monk's Screen tracking first.",type:Boolean,default:false});
- const specs={groupDistance:["Party grouping distance (grid squares)",2,24,1],padding:["Camera padding (grid squares)",0,8,1],minZoom:["Minimum zoom",.1,2,.1],maxZoom:["Maximum zoom",.5,3,.1],transition:["Transition duration (ms)",100,2000,50]};
+ register("observerId",{name:"Stream observer",hint:"Dedicated non-GM account.",type:String,default:"",choices:{"":"Not selected"}});
+ register("enabled",{name:"Enable spectator camera",hint:"Disable Monk's Screen, Party Screen and Vision tracking first.",type:Boolean,default:false});
+ const specs={groupDistance:["Party grouping distance (grid squares)",2,24,1],padding:["Camera padding without layout (grid squares)",0,8,1],minZoom:["Legacy minimum zoom (safe-area fit takes priority)",.1,2,.1],maxZoom:["Maximum zoom",.5,3,.1],transition:["Transition duration (ms)",100,2000,50],frameMargin:["Safe-area framing margin (% of group bounds)",0,60,5]};
  for(const [key,[name,min,max,step]] of Object.entries(specs))register(key,{name,type:Number,default:defaults[key],range:{min,max,step}});
- register("layoutEnabled",{name:"Enable broadcast layout",hint:"Experimental observer-only window and chat positioning.",type:Boolean,default:false});
- register("regions",{name:"Broadcast regions",config:false,type:Object,default:defaultRegions});
+ register("layoutEnabled",{name:"Enable broadcast layout",hint:"Observer-only window and chat positioning.",type:Boolean,default:false});
+ register("regions",{name:"Broadcast regions",config:false,type:Object,default:defaultRegions,requiresReload:false});
+ for(const key of ["art","chat","combat"])register(key+"Enabled",{name:"Position "+key,type:Boolean,default:true});
+ register("chatScale",{name:"Chat text scale (%)",type:Number,default:100,range:{min:60,max:140,step:5}});
 }
 export const setting=key=>game.settings.get(ID,key);
-export function isObserver(){return !game.user.isGM && game.user.id===setting("observerId");}
+export function isObserver(){return !!game.user&&!game.user.isGM&&game.user.id===setting("observerId");}
