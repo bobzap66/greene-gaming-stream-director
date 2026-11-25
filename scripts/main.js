@@ -12,7 +12,7 @@ async function update(){
   if(!isObserver()||!canvas.ready)return;
   const sceneId=canvas.scene.id;
   const encounter=game.combat;
-  const active=Boolean(encounter?.started && (encounter.scene?.id ?? encounter.sceneId ?? encounter.scene)===sceneId);
+  const active=Boolean(encounter?.started && encounter?.isActive);
   const grid=canvas.grid.size||100;
   let points;
   if(active){
