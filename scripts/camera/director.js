@@ -23,3 +23,18 @@ export function safeTarget(points,rect,center,current,{margin=.2,padding=0,maxSc
  const scale=!force&&s>0&&s<=ideal*1.03&&s>=ideal*.8&&s<=maxScale?s:ideal;
  return {x:groupX+(center.x-cx)/scale,y:groupY+(center.y-cy)/scale,scale};
 }
+
+/** Resolve combat only on the viewed scene; scene-less encounters use token membership. */
+export function sceneCombatTargets(encounter,sceneId,lookup,eligible){
+ if(!encounter?.started||!encounter?.isActive||!sceneId)return [];
+ const encounterScene=encounter.scene?.id??(typeof encounter.scene==="string"?encounter.scene:null);
+ if(encounterScene&&encounterScene!==sceneId)return [];
+ const targets=[];
+ for(const c of encounter.combatants??[]){
+  const combatantScene=c.sceneId??c.scene?.id??c.token?.parent?.id;
+  if(combatantScene&&combatantScene!==sceneId)continue;
+  const token=lookup(c.tokenId);
+  if(token&&eligible(token))targets.push(token);
+ }
+ return targets;
+}

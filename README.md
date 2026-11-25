@@ -8,6 +8,10 @@ Manifest: https://github.com/bobzap66/greene-gaming-stream-director/releases/lat
 
 Enable the module in your world, select your observer account, disable Monk's Screen, Party Screen and Vision tracking, then enable the spectator camera and reload clients. Give the observer Observer access to individual party actors and the Party actor where applicable. No actor permissions are modified by this module.
 
+## v0.2.2
+
+Reliability hotfix: combat framing is restricted to eligible combatants on the viewed scene, including scene-less encounters. Encounters elsewhere no longer suppress exploration or Party token switching. Scene teardown and canvas readiness reset camera state; an animation watchdog releases interrupted transitions. Existing layouts and framing mathematics are unchanged. Live cross-scene and OBS validation is required.
+
 ## v0.2.1
 
 Responsive safe-area framing reconciles the actual camera position, prioritizes fitting over the legacy minimum zoom, and uses a configurable proportional margin in layout mode. During exploration, moving a visible Party actor token selects it; moving a member of the largest individual cluster selects individual framing. On a fresh scene, individual characters take precedence if present. Active combat always takes precedence. Monk's Party Screen must be disabled.
