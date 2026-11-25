@@ -1,0 +1,37 @@
+name: Package and release
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm test
+      - run: node --check scripts/main.js
+      - name: Package module
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./module.json').version")
+          TAG="v$VERSION"
+          if [[ "$GITHUB_REF" == refs/tags/* && "$GITHUB_REF_NAME" != "$TAG" ]]; then exit 1; fi
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+          mkdir -p dist
+          cp module.json dist/module.json
+          zip -r dist/module.zip module.json scripts
+      - name: Publish development release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release already exists; bump version before publishing."
+            exit 1
+          fi
+          gh release create "$TAG" dist/module.json dist/module.zip --target "$GITHUB_SHA" --title "$TAG - Camera development build" --notes "Experimental camera-only build. Runtime testing in Foundry v14 required. Disabled by default." --latest
