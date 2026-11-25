@@ -7,12 +7,12 @@ Hooks.once("init",()=>{
 });
 function isObserver(){return !game.user.isGM && game.settings.get(ID,"enabled") && game.user.id===game.settings.get(ID,"observerId");}
 function pointsFor(tokens){return tokens.filter(t=>t && !t.document.hidden && t.isVisible && t.actor).map(t=>({id:t.id,x:t.center.x,y:t.center.y,width:t.w,height:t.h}));}
-function schedule(){if(!isObserver()) return; clearTimeout(timer);timer=setTimeout(update,500);}
+function schedule(){if(!isObserver() || timer) return; timer=setTimeout(()=>{timer=null; update().catch(error=>console.error(ID,error));},500);}
 async function update(){
   if(!isObserver()||!canvas.ready)return;
   const sceneId=canvas.scene.id;
   const encounter=game.combat;
-  const active=encounter?.started && encounter.scene?.id===sceneId;
+  const active=Boolean(encounter?.started && (encounter.scene?.id ?? encounter.sceneId ?? encounter.scene)===sceneId);
   const grid=canvas.grid.size||100;
   let points;
   if(active){
@@ -25,11 +25,16 @@ async function update(){
   }
   const target=frame(points,{width:window.innerWidth*.72,height:window.innerHeight*.8},{padding:2*grid,minScale:.4,maxScale:1.5});
   if(!target)return;
-  if(last?.sceneId===sceneId && Math.hypot(target.x-last.x,target.y-last.y)<grid && Math.abs(target.scale-last.scale)<.12)return;
-  last={...target,sceneId};
+  if(last?.sceneId===sceneId && last.active===active && last.members===points.map(p=>p.id).sort().join(",") && Math.hypot(target.x-last.x,target.y-last.y)<grid && Math.abs(target.scale-last.scale)<.12)return;
+  last={...target,sceneId,active,members:points.map(p=>p.id).sort().join(",")};
   await canvas.animatePan({...target,duration:750});
 }
 function distance(group,previous){if(!previous)return 0;return Math.hypot(group.reduce((s,p)=>s+p.x,0)/group.length-previous.x,group.reduce((s,p)=>s+p.y,0)/group.length-previous.y);}
 Hooks.on("canvasReady",()=>{last=null;schedule();});
 for(const event of ["updateToken","createToken","deleteToken","updateCombat","createCombat","deleteCombat","createCombatant","updateCombatant","deleteCombatant","sightRefresh"]) Hooks.on(event,schedule);
-Hooks.once("ready",schedule);
+// Reconcile after encounter transitions even if the observer receives no
+// combat hook, or visibility changes after the initial document update.
+Hooks.once("ready",()=>{
+  schedule();
+  setInterval(()=>{if(isObserver() && canvas.ready) schedule();},1000);
+});
