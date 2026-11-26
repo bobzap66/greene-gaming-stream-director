@@ -27,6 +27,7 @@ function subscribe(callback){
  if(!game.ready||!isObserver())return ()=>{};
  subscribers.add(callback);
  let value;try{value=snapshot();}catch(e){console.warn(ID,e);value=unavailable();}
+ if(subscribers.size===1)last=JSON.stringify(value);
  deliver(callback,value);
  return ()=>{subscribers.delete(callback);if(!subscribers.size){clearTimeout(pending);pending=null;last=null;}};
 }
