@@ -1,6 +1,6 @@
 import {ID,setting,isObserver} from "../settings.js";
 import {maintenanceActive} from "./maintenance.js";
-import {hideRules,presentationCSS,combatRows,contentKind,openJournalApplications} from "./policy.js";
+import {hideRules,presentationCSS,combatRows,contentKind,openJournalApplications,applicationElement} from "./policy.js";
 const showChat=()=>setting("observerMode")==="tabletop"?setting("tabletopShowChat"):setting("presentationChat");
 const showCombat=()=>setting("observerMode")==="tabletop"?setting("tabletopShowCombat"):setting("presentationCombat");
 let heartbeat=null;
@@ -11,14 +11,14 @@ const enabled=()=>game.ready&&isObserver()&&!maintenanceActive()&&setting("prese
 function clearTimers(){for(const timer of timers.values())clearTimeout(timer);timers.clear();}
 function dismiss(app){
  if(!enabled()||!app||typeof app.close!=="function"||closing.has(app))return;
- const el=app.element?.[0]??app.element;
+ const el=applicationElement(app);
  const kind=contentKind(el);
  if(kind==="journal"?el.isConnected!==true:!app.rendered)return;
  if(!kind||!setting(kind==="art"?"presentationDismissArt":"presentationDismissJournal"))return;
  if(timers.has(app))return;
  timers.set(app,setTimeout(()=>{
   timers.delete(app);
-  const current=app.element?.[0]??app.element;
+  const current=applicationElement(app);
   if(!enabled()||contentKind(current)!==kind||!(kind==="journal"?current.isConnected:app.rendered)||!setting(kind==="art"?"presentationDismissArt":"presentationDismissJournal"))return;
   closing.add(app);
   Promise.resolve().then(()=>app.close()).catch(e=>console.warn(ID,"Automatic "+kind+" dismissal failed",e)).finally(()=>closing.delete(app));
@@ -30,7 +30,7 @@ function activeCombat(){
  return !!(scene&&c?.started&&(!c.scene?.id||c.scene.id===scene)&&(!c.sceneId||c.sceneId===scene));
 }
 function trimCombat(app){
- const el=app?.element?.[0]??app?.element;
+ const el=applicationElement(app);
  if(!el?.querySelectorAll)return;
  const rows=[...el.querySelectorAll(".combatant[data-combatant-id], li.combatant")];
  const active=rows.findIndex(row=>row.classList.contains("active"));
