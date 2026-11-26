@@ -72,7 +72,8 @@ const groups={
  Combat:["combatStyle","actionAware","actionHold","actionLimit","cinematicPadding"],
  Broadcast:["presentationEnabled",...Object.keys(modeKeys).filter(k=>k.startsWith("presentation")&&k!=="presentationEnabled")],
  "Broadcast layout":["layoutEnabled","artEnabled","chatEnabled","combatEnabled","chatScale"],
- Tabletop:["tabletopWidth","tabletopGridInches","tabletopShowChat","tabletopShowCombat",...Object.values(modeKeys).filter(k=>k.startsWith("tabletopPresentation")), "tabletopLayoutEnabled","tabletopArtEnabled","tabletopChatEnabled","tabletopCombatEnabled","tabletopChatScale"],
+ Tabletop:["tabletopWidth","tabletopGridInches","tabletopLayoutEnabled","tabletopArtEnabled","tabletopChatEnabled","tabletopCombatEnabled","tabletopChatScale"],
+ "Tabletop presentation":["tabletopShowChat","tabletopShowCombat",...Object.values(modeKeys).filter(k=>k.startsWith("tabletopPresentation"))],
  Bookmarks:["bookmarkHold","bookmarkIndefinite"],
  Sharing:["sharingDestination"]
 };
@@ -92,7 +93,7 @@ function registerCategoryMenus(){
      const input=document.createElement(spec.choices?"select":"input");
      if(spec.choices){for(const [v,n] of Object.entries(spec.choices)){const opt=document.createElement("option");opt.value=v;opt.textContent=n;input.append(opt);}}
      else if(spec.type===Boolean)input.type="checkbox";
-     else if(spec.type===Number){input.type="number";if(spec.range)for(const k of ["min","max","step"])input[k]=spec.range[k];}
+     else if(spec.type===Number){input.type="number";input.step="any";if(spec.range)for(const k of ["min","max","step"])input[k]=spec.range[k];}
      else input.type="text";
      if(spec.type===Boolean)input.checked=setting(key);else input.value=String(setting(key));
      input.id=id+"-"+key;label.htmlFor=input.id;row.append(input);root.append(row);fields.set(key,{input,spec});
@@ -101,7 +102,7 @@ function registerCategoryMenus(){
     const save=document.createElement("button");save.type="button";save.textContent="Save settings";
     save.onclick=async()=>{if(!game.user?.isGM)return;save.disabled=true;try{
      const changes=[];
-     for(const [key,{input,spec}] of fields){const value=spec.type===Boolean?input.checked:spec.type===Number?Number(input.value):input.value;if(spec.type===Number&&(!input.value||!input.checkValidity()||!Number.isFinite(value)))throw Error("Invalid value: "+spec.name);if(value!==setting(key))changes.push([key,value,spec]);}
+     for(const [key,{input,spec}] of fields){const value=spec.type===Boolean?input.checked:spec.type===Number?Number(input.value):input.value;if(spec.type===Number&&(!input.value||!input.checkValidity()||!Number.isFinite(value)||(key==="tabletopWidth"&&value<0)))throw Error("Invalid value: "+spec.name);if(value!==setting(key))changes.push([key,value,spec]);}
      let reload=false;for(const [key,value,spec] of changes){await game.settings.set(ID,key,value);reload||=!!spec.requiresReload;}
      ui.notifications.info(reload?"Saved. Reload GM and observer clients to apply all changes.":"Stream Director settings saved.");await this.close();
     }catch(e){ui.notifications.error(e.message);}finally{save.disabled=false;}};
