@@ -27,6 +27,8 @@ export function combatRows(count,active,limit){
 export function contentKind(element){
  if(!element?.matches)return null;
  if(element.matches(".image-popout"))return "art";
- if(element.matches(".journal-sheet, .journal-entry, .journal-entry-page"))return "journal";
+ // Embedded page sheets may also carry journal-sheet; never close them independently.
+ if(element.matches(".journal-entry-page")||element.closest?.(".journal-entry-page"))return null;
+ if(element.matches(".journal-sheet, .journal-entry")&&element.matches(".application")&&!element.parentElement?.closest(".journal-entry"))return "journal";
  return null;
 }
