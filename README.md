@@ -53,6 +53,10 @@ Remember tabletop scene positions stores the actual center after deliberate move
 
 Includes standalone wording cleanup from PR #18; no Monk-specific setup requirements.
 
+## v0.4.6.1 — Standalone setup wording
+
+Remove outdated module-specific setup warnings from settings and documentation. Stream Director requires no external modules. General compatibility guidance remains in the README. No runtime behavior changes.
+
 ## v0.4.6 — Independent mode settings and sharing
 
 Main settings retain observer, mode and camera enable switches. GM-only category menus organize camera, combat, Broadcast presentation, Broadcast layout, Tabletop physical/layout, Tabletop presentation, bookmarks and sharing. Existing Broadcast values and regions remain unchanged; tabletop presentation copies previously saved Broadcast presentation values once on GM login, preserving existing tabletop chat/combat toggles. Tabletop layout is off by default; enable it and optionally position art/journals, chat and tracker using its separate editor. The tabletop map does not use layout regions for framing. Calibration remains local and unchanged.
