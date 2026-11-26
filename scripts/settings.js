@@ -14,6 +14,7 @@ export function registerSettings(){
  const specs={groupDistance:["Party grouping distance (grid squares)",2,24,1],padding:["Camera padding without layout (grid squares)",0,8,1],minZoom:["Legacy minimum zoom (safe-area fit takes priority)",.1,2,.1],maxZoom:["Maximum zoom",.5,3,.1],transition:["Transition duration (ms)",100,2000,50],frameMargin:["Safe-area framing margin (% of group bounds)",0,60,5]};
  for(const [key,[name,min,max,step]] of Object.entries(specs))register(key,{name,type:Number,default:defaults[key],range:{min,max,step}});
  register("layoutEnabled",{name:"Enable broadcast layout",hint:"Observer-only window and chat positioning.",type:Boolean,default:false});
+ register("cameraCommand",{name:"GM camera command",config:false,type:Object,default:{mode:"auto"},requiresReload:false});
  register("regions",{name:"Broadcast regions",config:false,type:Object,default:defaultRegions,requiresReload:false});
  for(const key of ["art","chat","combat"])register(key+"Enabled",{name:"Position "+key,type:Boolean,default:true});
  register("chatScale",{name:"Chat text scale (%)",type:Number,default:100,range:{min:60,max:140,step:5}});

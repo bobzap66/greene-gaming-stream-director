@@ -4,8 +4,10 @@ import {registerEditor} from "./layout/editor.js";
 import {registerLayout,region} from "./layout/runtime.js";
 import {pixels} from "./layout/geometry.js";
 import {safeTarget,chooseExploration,sceneCombatTargets} from "./camera/director.js";
-let timer,flight=null,last=null,mode=null,partyId=null,sceneId=null;
-Hooks.once("init",()=>{registerSettings();registerEditor();registerLayout();});
+import {registerGMDirector} from "./gm/panel.js";
+import {effectiveCommand,manualTarget,transitionDuration} from "./camera/manual.js";
+let timer,flight=null,last=null,mode=null,partyId=null,sceneId=null,discardedCommand=null;
+Hooks.once("init",()=>{registerSettings();registerEditor();registerLayout();registerGMDirector();});
 const enabled=()=>game.ready&&isObserver()&&setting("enabled");
 const visible=t=>t&&t.actor&&t.isVisible&&!t.document.hidden;
 const combatTargets=()=>sceneCombatTargets(game.combat,canvas.scene?.id,id=>canvas.tokens.get(id),visible);
@@ -23,21 +25,26 @@ async function update(){
  let points;
  if(active)points=combat.map(point);
  else points=chooseExploration(individuals,parties,mode,partyId,setting("groupDistance")*grid,last);
- if(!points.length)return;
+ const rawCommand=setting("cameraCommand");
+ const command=rawCommand?.issuedAt===discardedCommand?{mode:"auto"}:effectiveCommand(rawCommand,sceneId,game.user.id);
+ if(command.mode==="hold")return;
  const layout=setting("layoutEnabled");
  const rect=pixels(layout?region("camera"):{x:14,y:10,w:72,h:80},innerWidth,innerHeight);
  const stage=canvas.stage;
  const current={x:stage.pivot.x,y:stage.pivot.y,scale:stage.scale.x};
  const members=points.map(p=>p.id).sort().join(",");
- const key=[sceneId,active,members,innerWidth,innerHeight,JSON.stringify(rect)].join("|");
- const target=safeTarget(points,rect,{x:stage.position.x,y:stage.position.y},current,{margin:layout?setting("frameMargin")/100:0,padding:layout?0:setting("padding")*grid,maxScale:setting("maxZoom"),force:key!==last?.key});
+ const center={x:stage.position.x,y:stage.position.y};
+ const key=[sceneId,active,members,innerWidth,innerHeight,JSON.stringify(rect),command.mode,command.tokenId,command.issuedAt].join("|");
+ const options={margin:layout?setting("frameMargin")/100:0,padding:layout?0:setting("padding")*grid,maxScale:setting("maxZoom"),force:key!==last?.key};
+ const target=command.mode==="auto"?safeTarget(points,rect,center,current,options):manualTarget(command,{rect,center,current,sceneRect:canvas.dimensions.sceneRect,token:canvas.tokens.get(command.tokenId),visible,maxScale:options.maxScale,frame:t=>safeTarget([point(t)],rect,center,current,options)});
+
  if(!target)return;
  if(Math.hypot(target.x-current.x,target.y-current.y)*current.scale<2&&Math.abs(target.scale-current.scale)<.005){last={...target,key};return;}
- const duration=setting("transition"),run={scene:sceneId};
+ const duration=command.mode==="auto"?setting("transition"):transitionDuration(command.speed,setting("transition")),run={scene:sceneId};
  flight=run;
  let watchdog;
  try{
-  const completed=await Promise.race([Promise.resolve(canvas.animatePan({...target,duration})).then(()=>true),new Promise(resolve=>{watchdog=setTimeout(()=>resolve(false),duration+1500);})]);
+  const completed=await Promise.race([Promise.resolve(duration===0?canvas.pan(target):canvas.animatePan({...target,duration})).then(()=>true),new Promise(resolve=>{watchdog=setTimeout(()=>resolve(false),duration+1500);})]);
   if(completed&&flight===run&&canvas.scene?.id===run.scene)last={...target,key};
   if(!completed&&flight===run)last=null;
  }finally{clearTimeout(watchdog);if(flight===run){flight=null;schedule();}}
@@ -55,9 +62,9 @@ Hooks.on("updateToken",(doc,change)=>{
  schedule();
 });
 function resetScene(){clearTimeout(timer);timer=null;flight=null;sceneId=null;last=null;mode=null;partyId=null;}
-Hooks.on("canvasTearDown",resetScene);
+Hooks.on("canvasTearDown",()=>{if(game.ready&&isObserver())discardedCommand=setting("cameraCommand")?.issuedAt??null;resetScene();});
 Hooks.on("canvasReady",()=>{resetScene();schedule();});
-for(const event of ["createToken","deleteToken","updateCombat","createCombat","deleteCombat","createCombatant","updateCombatant","deleteCombatant","sightRefresh"])Hooks.on(event,schedule);
+for(const event of ["createToken","deleteToken","updateCombat","createCombat","deleteCombat","createCombatant","updateCombatant","deleteCombatant","sightRefresh","updateSetting"])Hooks.on(event,schedule);
 Hooks.once("ready",()=>{refreshObserverChoices();schedule();setInterval(schedule,750);});
 for(const event of ["createUser","updateUser","deleteUser"])Hooks.on(event,refreshObserverChoices);
 window.addEventListener("resize",schedule);
