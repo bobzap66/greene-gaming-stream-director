@@ -8,6 +8,18 @@ Manifest: https://github.com/bobzap66/greene-gaming-stream-director/releases/lat
 
 Enable the module in your world, select your observer account, disable Monk's Screen, Party Screen and Vision tracking, then enable the spectator camera and reload clients. Give the observer Observer access to individual party actors and the Party actor where applicable. No actor permissions are modified by this module.
 
+## v0.4.0 — Cinematic combat
+
+In the GM Camera Director (Alt+Shift+D), choose Combat style: Cinematic. Tactical remains the default and preserves the existing encounter-wide framing. Cinematic applies only in Auto mode and only to an active encounter on the observer's scene.
+
+- Start with an approximately two-second tactical establishing shot, then follow the active visible combatant as initiative advances and the combatant moves.
+- Newly selected targets from connected owners of the acting actor (or the GM when no connected owner is present) widen the frame. Existing target selections at turn entry are deliberately ignored until retargeted. Target changes settle for at least 400 ms and are paced at least 1.2 seconds apart; polling and ongoing transitions may add delay.
+- Target and acting token visibility is checked on the observer. Hidden/unavailable active combatants fall back to the tactical shot. Invisible targets are dropped from shot selection immediately on the next camera update.
+- Cinematic combat context setting adds 2.5 grid squares of space per side by default (adjustable from 1 to 6). Existing safe-area fit and zoom limits apply.
+- Manual camera modes retain priority. Return to Auto to resume combat direction. Ending combat returns to exploration.
+
+This is initiative- and targeting-driven, not attack-result or animation-aware. It does not change target selections, fog, combat documents or ownership. Live tests must verify remote player and GM target replication in PF2e and SF2e; if targets are unavailable, active-combatant tracking still works. Combat styles are world-specific.
+
 ## v0.3.1 — Explored-area Wide Shot
 
 Wide Shot (Alt+Shift+3) now frames the observer's explored fog and current visibility, with a configurable 10% total size margin. Up to 2,000 map samples are cached for at least one second while Wide Shot is active; visible party token bounds are included when sampling yields a usable rectangle. No fog or permissions are changed. The view expands as exploration grows. Sampling is approximate; narrow corridors and irregular shapes may leave dark space in the shot.

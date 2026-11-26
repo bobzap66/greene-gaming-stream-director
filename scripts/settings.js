@@ -13,6 +13,8 @@ export function registerSettings(){
  register("enabled",{name:"Enable spectator camera",hint:"Disable Monk's Screen, Party Screen and Vision tracking first.",type:Boolean,default:false});
  const specs={groupDistance:["Party grouping distance (grid squares)",2,24,1],padding:["Camera padding without layout (grid squares)",0,8,1],minZoom:["Legacy minimum zoom (safe-area fit takes priority)",.1,2,.1],maxZoom:["Maximum zoom",.5,3,.1],transition:["Transition duration (ms)",100,2000,50],frameMargin:["Safe-area framing margin (% of group bounds)",0,60,5]};
  for(const [key,[name,min,max,step]] of Object.entries(specs))register(key,{name,type:Number,default:defaults[key],range:{min,max,step}});
+ register("combatStyle",{name:"Combat camera style",hint:"Tactical frames all visible combatants. Cinematic follows initiative and new targets.",type:String,default:"tactical",choices:{tactical:"Tactical",cinematic:"Cinematic"},requiresReload:false});
+ register("cinematicPadding",{name:"Cinematic combat context (grid squares)",hint:"Extra space on each side of the acting combatant and targets.",type:Number,default:2.5,range:{min:1,max:6,step:.5},requiresReload:false});
  register("wideMargin",{name:"Wide Shot exploration margin (%)",hint:"Extra space around explored bounds, as a percentage of their width and height.",type:Number,default:10,range:{min:0,max:60,step:5},requiresReload:false});
  register("layoutEnabled",{name:"Enable broadcast layout",hint:"Observer-only window and chat positioning.",type:Boolean,default:false});
  register("cameraCommand",{name:"GM camera command",config:false,type:Object,default:{mode:"auto"},requiresReload:false});
