@@ -48,9 +48,18 @@ export function applyLayout(){
  if(!style&&css){style=document.createElement("style");style.id="ggsd-layout-rules";document.head.append(style);}
  if(style&&style.textContent!==css)style.textContent=css;
 }
-function schedule(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;applyLayout();});}
+function schedule(){if(!game.ready||(!isObserver()&&!managed.size&&!style?.textContent)||queued)return;queued=true;requestAnimationFrame(()=>{queued=false;applyLayout();});}
 export function registerLayout(){
  for(const event of ["renderApplication","renderApplicationV2","renderChatLog","updateSetting","canvasReady","ggsdMaintenanceChanged","renderSidebarTab"])Hooks.on(event,schedule);
- Hooks.once("ready",()=>{schedule();observer=new MutationObserver(schedule);observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["style","class"]});});
+ function syncObserver(){
+  if(!game.ready)return;
+  const on=isObserver()&&setting("layoutEnabled")&&!maintenanceActive();
+  if(on&&!observer){observer=new MutationObserver(schedule);observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["style","class"]});}
+  else if(!on&&observer){observer.disconnect();observer=null;}
+  schedule();
+ }
+ Hooks.once("ready",syncObserver);
+ Hooks.on("updateSetting",syncObserver);
+ Hooks.on("ggsdMaintenanceChanged",syncObserver);
  window.addEventListener("resize",schedule);
 }
