@@ -37,6 +37,10 @@ The maintenance shortcut works on the designated observer when presentation or l
 
 **Hotbar alternative:** Click **Create director hotbar macro** in the GM Director panel, then drag **Open Stream Director** from the Macros directory to your preferred hotbar slot.
 
+## v0.4.5.3 — Native form element hotfix
+
+Foundry v14 journal windows are native HTML forms whose numeric index zero can refer to an internal button. The observer confirmed FORM versus BUTTON in the browser. Preserve native elements before unwrapping legacy jQuery containers in registry discovery, dismissal scheduling, dismissal execution and combat tracker processing. Add a regression test for indexed forms. No changes to role-based performance optimizations, camera or layout settings.
+
 ## v0.4.5.2 — Journal registry discovery and client performance
 
 The native Foundry v14 application registry is checked during presentation reconciliation (including the existing one-second heartbeat). Connected parent journal windows receive one dismissal timer regardless of the render-hook timing or rendered flag; embedded pages remain excluded. Native close is used, with an in-flight guard against overlapping close requests. Artwork still uses its render-hook path. Automatic journal dismissal can also catch locally opened journals, not just GM-shared ones. Maintenance cancels pending timers; on resuming, open journals receive a fresh timer. No changes to calibration, layouts, settings categories or camera behavior. Live validation required.
