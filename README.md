@@ -29,6 +29,7 @@ All shortcuts below are defaults and can be customized in Foundry's Configure Co
 | `Alt+Shift+S` | Share focused artwork or a single visible journal page with the configured recipients. |
 | `Alt+Shift+A` | Share selected token actor artwork. |
 | `Alt+Shift+X` | Close artwork and journal windows on the designated observer only. |
+| `Alt+Shift+V` | Toggle the draggable tabletop viewport outline on the GM canvas. |
 | `Escape` | Cancel a pending Focus Point selection (fixed, not a configurable keybinding). |
 
 ### Observer controls
@@ -41,6 +42,16 @@ All shortcuts below are defaults and can be customized in Foundry's Configure Co
 The maintenance shortcut works on the designated observer when presentation or layout is enabled. Camera direction continues running, world settings are unchanged, and refreshing the observer exits maintenance mode. Use it to access Game Settings without asking the GM to disable broadcast presentation.
 
 **Hotbar alternative:** Click **Create director hotbar macro** in the GM Director panel, then drag **Open Stream Director** from the Macros directory to your preferred hotbar slot.
+
+## v0.4.7 — Display profiles and tabletop viewport (experimental)
+
+Alt+Shift+C opens observer ruler calibration with named saved profiles, optional Detect monitors (requires a supported browser and permission), and profile selection/deletion. Previously granted monitor permission is reused at login. Profile matching checks CSS screen width, height and device pixel ratio, plus available monitor label; labels are not unique hardware IDs. Without labels, select a matching profile manually if display identity is uncertain. Browser/device-local storage; not guaranteed to transfer between worlds or browsers. Existing single calibration remains a fallback until profiles are saved. No physical size is inferred by the API. Confirm the ruler against the actual display before placing miniatures.
+
+Alt+Shift+V or the GM director button toggles an outline of the connected tabletop observer's viewport on the GM canvas. Drag its label to move, release to send a one-time fixed-scale focus command. Whole-square movement snaps relative to the initial position by default (square grids only); no intermediate movement commands. The outline is advisory, not a video preview. Observer snapshots contain only scene ID, user ID, canvas center, scale and viewport dimensions and travel over the Foundry module socket; ordinary players do not run recurring tasks. The GM must deliberately drag to issue a camera command; the observer still accepts only the existing GM-written world setting. Socket telemetry is not authenticated and must not be trusted for authorization.
+
+Remember tabletop scene positions stores the actual center after deliberate moves locally on the observer and restores it when revisiting scenes. It is enabled by default, independent of Broadcast bookmarks, and does not store scale. Browser storage and current observer account must be retained. Disable the option to stop restoring saved positions. All display and physical-position behavior requires live verification.
+
+Includes standalone wording cleanup from PR #18; no Monk-specific setup requirements.
 
 ## v0.4.6.1 — Standalone setup wording
 

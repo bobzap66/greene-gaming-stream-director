@@ -1,12 +1,14 @@
 import {ID,setting,isObserver} from "../settings.js";
 import {physicalScale,tabletopTarget,displaySignature} from "./policy.js";
+import {registerDisplay,displayControls,currentProfile,hasProfiles,saveProfile,signature} from "./display.js";
 import {effectiveCommand} from "../camera/manual.js";
 export const tabletopMode=()=>setting("observerMode")==="tabletop";
 const active=()=>game.ready&&isObserver()&&setting("enabled")&&tabletopMode();
 let installed=false,allow=0,lastCommand=null,lastScene=null,lastScale=null,queued=false,warned="",calibrating=false;
-const signature=()=>displaySignature({width:screen.width,height:screen.height,dpr:devicePixelRatio});
+
 const calibration=()=>setting("tabletopCalibration");
 function pixelsPerInch(){
+ const profile=currentProfile();if(profile)return profile.ppi;if(hasProfiles())return null;
  const c=calibration();
  if(c?.signature===signature()&&Number.isFinite(c.ppi)&&c.ppi>0)return c.ppi;
  if(c?.ppi&&c.signature!==signature())return null;
@@ -56,19 +58,26 @@ function reconcile(){
  install();
  const s=scale(),scene=canvas.scene.id;
  const c=calibration();
- if(c?.ppi&&c.signature!==signature())warnOnce("Tabletop: display metrics changed. Recalibrate before placing miniatures.");
+ if(!hasProfiles()&&c?.ppi&&c.signature!==signature())warnOnce("Tabletop: display metrics changed. Recalibrate before placing miniatures.");
  if(!s){warnOnce("Tabletop: calibrate the display with Alt+Shift+C or enter its physical width. Gridless scenes retain their existing scale.");}
  const stage=canvas.stage,current={x:stage.pivot.x,y:stage.pivot.y,scale:stage.scale.x};
  const raw=setting("cameraCommand"),command=effectiveCommand(raw,scene,game.user.id);
  const sceneChanged=scene!==lastScene;
  const changed=command.issuedAt!==lastCommand;
  // Initial scene load does not replay an old movement command.
- const move=sceneChanged||!changed?{mode:"hold"}:command;
+ const saved=setting("tabletopPositions")?.[scene];
+ const move=sceneChanged&&setting("tabletopRememberPosition")&&Number.isFinite(saved?.x)&&Number.isFinite(saved?.y)?{mode:"focus",x:saved.x,y:saved.y}:sceneChanged||!changed?{mode:"hold"}:command;
  const target=tabletopTarget(move,{current,sceneRect:canvas.dimensions.sceneRect,token:canvas.tokens.get(command.tokenId),visible:t=>t?.isVisible&&!t.document.hidden,scale:s??current.scale});
  if(target&&(sceneChanged||changed||s!==lastScale)){
   if(Math.abs(target.x-current.x)>0.01||Math.abs(target.y-current.y)>0.01||Math.abs(target.scale-current.scale)>0.0001)deliberatePan(target);
  }
  lastScene=scene;lastCommand=command.issuedAt;lastScale=s;
+ if(target&&changed&&!sceneChanged&&move.mode!=="hold"&&move.mode!=="auto"&&setting("tabletopRememberPosition")){
+  const positions=setting("tabletopPositions")??{};
+  const p=canvas.stage.pivot;
+  if(positions[scene]?.x!==p.x||positions[scene]?.y!==p.y)void game.settings.set(ID,"tabletopPositions",{...positions,[scene]:{x:p.x,y:p.y}}).catch(e=>console.warn(ID,e));
+ }
+ Hooks.callAll("ggsdTabletopViewChanged");
 }
 function schedule(){if(!game.ready||(!active()&&lastScene===null)||queued)return;queued=true;requestAnimationFrame(()=>{queued=false;try{reconcile();}catch(e){console.error(ID,e);warnOnce("Tabletop: positioning failed; check the console.");}});}
 function openCalibration(){
@@ -84,12 +93,15 @@ function openCalibration(){
  const slider=document.createElement("input");slider.type="range";slider.min="10";slider.max="500";slider.step=".1";slider.value=String(ppi);slider.style.width="min(500px,80vw)";
  function draw(v){if(!Number.isFinite(v)||v<10||v>500)return;ppi=v;square.style.width=square.style.height=ppi+"px";value.value=slider.value=String(ppi);}
  value.oninput=()=>draw(Number(value.value));slider.oninput=()=>draw(Number(slider.value));draw(ppi);panel.append(value,slider);
+ const profileUI=displayControls(panel,draw);
  const close=()=>{panel.remove();window.removeEventListener("keydown",escape,true);calibrating=false;};
  const escape=e=>{if(e.key==="Escape"){e.stopImmediatePropagation();close();}};
- const save=document.createElement("button");save.textContent="Save calibration";save.onclick=async()=>{try{await game.settings.set(ID,"tabletopCalibration",{ppi,signature:signature()});close();warned="";schedule();}catch(e){ui.notifications.error("Calibration could not be saved.");}};
+ const save=document.createElement("button");save.textContent="Save calibration";save.onclick=async()=>{try{await saveProfile(profileUI.name(),ppi,profileUI.id());await game.settings.set(ID,"tabletopCalibration",{ppi,signature:signature()});close();warned="";schedule();}catch(e){ui.notifications.error("Calibration could not be saved.");}};
  const cancel=document.createElement("button");cancel.textContent="Cancel";cancel.onclick=close;panel.append(save,cancel);document.body.append(panel);window.addEventListener("keydown",escape,true);
 }
 export function registerTabletop(){
+ registerDisplay(schedule);
+ game.settings.register(ID,"tabletopPositions",{scope:"client",config:false,type:Object,default:{}});
  game.settings.register(ID,"tabletopCalibration",{scope:"client",config:false,type:Object,default:{}});
  game.keybindings.register(ID,"tabletop-calibrate",{name:"Calibrate tabletop display",editable:[{key:"KeyC",modifiers:["Alt","Shift"]}],restricted:false,onDown:()=>{if(!active())return false;openCalibration();return true;}});
  Hooks.once("ready",()=>{if(isObserver()&&tabletopMode())install();schedule();});
@@ -97,4 +109,5 @@ export function registerTabletop(){
  Hooks.on("canvasTearDown",()=>{if(!active()&&lastScene===null)return;lastScene=null;lastCommand=null;lastScale=null;});
  Hooks.on("updateSetting",schedule);
  window.addEventListener("resize",schedule);
+ screen.addEventListener?.("change",schedule);
 }

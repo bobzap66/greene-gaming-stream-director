@@ -15,6 +15,8 @@ export function registerSettings(){
  const register=(key,data)=>game.settings.register(ID,key,{scope:"world",config:["observerId","observerMode","enabled"].includes(key),requiresReload:true,...data});
  register("observerId",{name:"Stream observer",hint:"Dedicated non-GM account.",type:String,default:"",choices:{"":"Not selected"}});
  register("observerMode",{name:"Observer mode",hint:"Broadcast uses automatic camera direction. Tabletop locks map position and physical scale.",type:String,default:"broadcast",choices:{broadcast:"Broadcast",tabletop:"Tabletop"}});
+ register("tabletopRememberPosition",{name:"Remember tabletop scene positions",hint:"Restore the last deliberate position for each scene on this observer browser.",type:Boolean,default:true,requiresReload:false});
+ register("tabletopSnapMovement",{name:"Snap viewport drag to whole grid squares",type:Boolean,default:true,requiresReload:false});
  register("tabletopWidth",{name:"Tabletop: physical screen width (inches)",hint:"Measure the visible panel horizontally, not diagonally. Zero means use ruler calibration on the observer.",type:Number,default:0,requiresReload:false});
  register("tabletopGridInches",{name:"Tabletop: physical grid size (inches)",type:Number,default:1,range:{min:.5,max:2,step:.05},requiresReload:false});
  register("tabletopShowChat",{name:"Tabletop: show chat",type:Boolean,default:false,requiresReload:false});
@@ -72,7 +74,7 @@ const groups={
  Combat:["combatStyle","actionAware","actionHold","actionLimit","cinematicPadding"],
  Broadcast:["presentationEnabled",...Object.keys(modeKeys).filter(k=>k.startsWith("presentation")&&k!=="presentationEnabled")],
  "Broadcast layout":["layoutEnabled","artEnabled","chatEnabled","combatEnabled","chatScale"],
- Tabletop:["tabletopWidth","tabletopGridInches","tabletopLayoutEnabled","tabletopArtEnabled","tabletopChatEnabled","tabletopCombatEnabled","tabletopChatScale"],
+ Tabletop:["tabletopWidth","tabletopGridInches","tabletopRememberPosition","tabletopSnapMovement","tabletopLayoutEnabled","tabletopArtEnabled","tabletopChatEnabled","tabletopCombatEnabled","tabletopChatScale"],
  "Tabletop presentation":["tabletopShowChat","tabletopShowCombat",...Object.values(modeKeys).filter(k=>k.startsWith("tabletopPresentation"))],
  Bookmarks:["bookmarkHold","bookmarkIndefinite"],
  Sharing:["sharingDestination"]
