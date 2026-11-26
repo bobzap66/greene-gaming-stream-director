@@ -30,11 +30,20 @@ All shortcuts below are defaults and can be customized in Foundry's Configure Co
 
 | Shortcut | Action |
 | --- | --- |
+| `Alt+Shift+C` | Open tabletop ruler calibration on the designated observer (Tabletop mode, camera enabled). |
 | `Alt+Shift+U` | Toggle maintenance mode: temporarily restore the normal Foundry interface and sidebar, then press again to restore broadcast presentation and layout. |
 
 The maintenance shortcut works on the designated observer when presentation or layout is enabled. Camera direction continues running, world settings are unchanged, and refreshing the observer exits maintenance mode. Use it to access Game Settings without asking the GM to disable broadcast presentation.
 
 **Hotbar alternative:** Click **Create director hotbar macro** in the GM Director panel, then drag **Open Stream Director** from the Macros directory to your preferred hotbar slot.
+
+## v0.4.5 — Tabletop foundation (experimental)
+
+In main module settings select Tabletop observer mode, select your dedicated observer, enable spectator camera and optionally enable broadcast presentation. Disable Lock View and other camera controllers in the test world; reload both clients. On the television, press Alt+Shift+C and adjust the reference square against a ruler until it measures one inch. Save calibration locally in that browser. Alternatively enter the measured horizontal visible screen width (not diagonal) in world settings. The desired physical grid size defaults to one inch. Ruler calibration overrides screen width when display metrics match; changes to resolution or device pixel ratio require recalibration. Gridless scenes retain the current scale. Physical sizing is intended for square grids; other grid geometries are not validated.
+
+Tabletop mode intercepts normal pan and animatePan calls and disables broadcast auto-framing, including combat rolls. GM Focus Point and bookmarks move the display at fixed scale; Follow Token and Mirror GM center once, not continuously. Wide and Full center the map without fitting it. Auto and Hold leave the map stationary. Bookmarks do not automatically return in Tabletop mode. Deliberate moves are immediate cuts. Maintenance mode restores interface access without disabling camera locks. Chat and combat tracker are off by default in Tabletop when presentation is enabled. Broadcast mode retains existing behavior.
+
+The wrapper uses libWrapper when available, otherwise a narrow prototype wrapper. Native Foundry drag, wheel, ping, resize, scene initialization, animation and other module compatibility must be verified on the actual television before placing miniatures. Do not assume all possible direct stage mutations are intercepted. The GM viewbox, whole-grid movement and persisted scene positions are planned for the next release.
 
 ## v0.4.4.1 — Observer maintenance and PF2e HUD
 

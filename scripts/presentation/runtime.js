@@ -1,6 +1,8 @@
 import {ID,setting,isObserver} from "../settings.js";
 import {maintenanceActive} from "./maintenance.js";
 import {hideRules,presentationCSS,combatRows,contentKind} from "./policy.js";
+const showChat=()=>setting("observerMode")==="tabletop"?setting("tabletopShowChat"):setting("presentationChat");
+const showCombat=()=>setting("observerMode")==="tabletop"?setting("tabletopShowCombat"):setting("presentationCombat");
 let style,queued=false,busy=false,ownedCombat=null,chatActivated=false;
 const timers=new Map();
 const enabled=()=>game.ready&&isObserver()&&!maintenanceActive()&&setting("presentationEnabled");
@@ -34,19 +36,19 @@ async function reconcile(){
  try{
   const on=enabled();
   if(!style){style=document.createElement("style");style.id="ggsd-presentation";document.head.append(style);}
-  const css=presentationCSS({enabled:on,...(on?Object.fromEntries([...Object.keys(hideRules),"presentationChat"].map(k=>[k,setting(k)])): {})});
+  const css=presentationCSS({enabled:on,...(on?Object.fromEntries(Object.keys(hideRules).map(k=>[k,setting(k)])): {}),presentationChat:on&&showChat()})+(on&&setting("observerMode")==="tabletop"&&!showChat()?"\n#sidebar, #sidebar-content, #sidebar-tabs{display:none!important;}":"");
   if(style.textContent!==css)style.textContent=css;
   if(!on){
    clearTimers();chatActivated=false;
    document.querySelectorAll("[data-ggsd-combat-hidden]").forEach(el=>el.removeAttribute("data-ggsd-combat-hidden"));
   }
-  if(on&&setting("presentationChat")){
+  if(on&&showChat()){
    if(!chatActivated||ui.chat?.active===false){ui.chat?.activate?.();chatActivated=true;}
    const sidebar=ui.sidebar;
    if(sidebar?.collapsed===true&&typeof sidebar.expand==="function")await sidebar.expand();
   }else chatActivated=false;
   const tracker=ui.combat;
-  if(on&&setting("presentationCombat")&&activeCombat()){
+  if(on&&showCombat()&&activeCombat()){
    if(tracker?.renderPopout){
     let pop=tracker.popout;
     if(!pop?.rendered){pop=await tracker.renderPopout();ownedCombat=pop;}

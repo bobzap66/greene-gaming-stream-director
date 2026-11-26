@@ -31,7 +31,7 @@ export function applyLayout(){
  apply(el,{position:"fixed",left:(b.x+(b.width-w*s)/2)+"px",top:(b.y+(b.height-h*s)/2)+"px",right:"auto",bottom:"auto","transform-origin":"top left",transform:"scale("+s+")"});
  }
  }
- if(setting("chatEnabled")){
+ if(setting("chatEnabled")&&(setting("observerMode")!=="tabletop"||setting("tabletopShowChat"))){
  const sidebar=document.querySelector("#sidebar-content"),chat=document.querySelector("#chat"),parent=document.querySelector("#ui-right");
  if(sidebar&&chat&&parent&&(!setting("presentationEnabled")?ui.chat?.active!==false:true)){
  const r=pixels(region("chat"),innerWidth,innerHeight),b=parent.getBoundingClientRect(),transform=getComputedStyle(parent).transform;
