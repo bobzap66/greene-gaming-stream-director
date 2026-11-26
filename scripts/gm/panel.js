@@ -1,8 +1,8 @@
 import {ID,setting} from "../settings.js";
 import {MODES,effectiveCommand} from "../camera/manual.js";
 let panel, mirrorTimer, mirrorBusy=false, mirrorGeneration=0, commandQueue=Promise.resolve(), pickCleanup;
-const labels={auto:"Auto",hold:"Hold",wide:"Wide shot",follow:"Follow token",focus:"Focus point",mirror:"Mirror GM"};
-const icons={auto:"fa-crosshairs",hold:"fa-pause",wide:"fa-expand",follow:"fa-person-walking",focus:"fa-location-dot",mirror:"fa-display"};
+const labels={auto:"Auto",hold:"Hold",wide:"Wide shot",follow:"Follow token",focus:"Focus point",mirror:"Mirror GM",full:"Full Scene"};
+const icons={auto:"fa-crosshairs",hold:"fa-pause",wide:"fa-expand",follow:"fa-person-walking",focus:"fa-location-dot",mirror:"fa-display",full:"fa-map"};
 let speed="smooth";
 function stopMirror(){mirrorGeneration++;clearInterval(mirrorTimer);mirrorTimer=null;}
 function stopPick(){pickCleanup?.();pickCleanup=null;}
@@ -75,15 +75,15 @@ function refreshPanel(){
 export function registerGMDirector(){
  const {ApplicationV2}=foundry.applications.api;
  class DirectorPanel extends ApplicationV2{
-  static DEFAULT_OPTIONS={id:"ggsd-director",window:{title:"Stream Director",resizable:true},position:{width:330,height:310}};
+  static DEFAULT_OPTIONS={id:"ggsd-director",window:{title:"Stream Director",resizable:true},position:{width:400,height:310}};
   async _renderHTML(){panel=this;return document.createElement("div");}
   _replaceHTML(result,content){
    content.replaceChildren(result);Object.assign(result.style,{display:"grid",gap:"8px",padding:"4px"});
    const status=document.createElement("div");status.dataset.status="";result.append(status);
    const current=document.createElement("div");current.dataset.mode="";current.style.fontWeight="bold";result.append(current);
-   const grid=document.createElement("div");Object.assign(grid.style,{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",gap:"5px"});
+   const grid=document.createElement("div");Object.assign(grid.style,{display:"grid",gridTemplateColumns:"repeat(4,minmax(0,1fr))",gap:"5px"});
    for(const mode of MODES){
-    const b=document.createElement("button");b.type="button";b.dataset.camera=mode;b.title=labels[mode];
+    const b=document.createElement("button");b.type="button";b.dataset.camera=mode;b.title=mode==="wide"?"Frame explored and visible areas":mode==="full"?"Frame the entire map":labels[mode];
     Object.assign(b.style,{height:"56px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:"3px",fontSize:"11px",lineHeight:"1.1",padding:"4px"});
     const icon=document.createElement("i");icon.className="fas "+icons[mode];const label=document.createElement("span");label.textContent=labels[mode];b.append(icon,label);b.onclick=safeAction(()=>selectMode(mode));grid.append(b);
    }
@@ -92,13 +92,13 @@ export function registerGMDirector(){
    const select=document.createElement("select");
    for(const [value,name] of [["cut","Cut"],["smooth","Smooth"],["cinematic","Cinematic"]]){const opt=document.createElement("option");opt.value=value;opt.textContent=name;select.append(opt);}
    select.value=speed;select.onchange=()=>{speed=select.value;};label.append(select);result.append(label);
-   const note=document.createElement("small");note.textContent="Follow: select one token. Focus: click the map. Manual modes reset on scene changes.";result.append(note);
+   const note=document.createElement("small");note.textContent="Wide: explored area. Full: entire map. Follow: select one token. Focus: click the map. Scene changes reset Auto.";result.append(note);
    requestAnimationFrame(refreshPanel);
   }
  }
  function open(){if(!game.user?.isGM)return;panel??=new DirectorPanel();panel.render(true);}
  game.settings.registerMenu(ID,"gmDirector",{name:"GM Camera Director",label:"Open camera director",hint:"Direct the designated stream observer only.",icon:"fas fa-video",type:DirectorPanel,restricted:true});
- const bindings={open:["KeyD",()=>{open();return true;}],auto:["Digit1",()=>{safeAction(()=>selectMode("auto"))();return true;}],hold:["Digit2",()=>{safeAction(()=>selectMode("hold"))();return true;}],wide:["Digit3",()=>{safeAction(()=>selectMode("wide"))();return true;}],follow:["Digit4",()=>{safeAction(()=>selectMode("follow"))();return true;}],focus:["Digit5",()=>{safeAction(()=>selectMode("focus"))();return true;}],mirror:["Digit6",()=>{safeAction(()=>selectMode("mirror"))();return true;}]};
+ const bindings={open:["KeyD",()=>{open();return true;}],auto:["Digit1",()=>{safeAction(()=>selectMode("auto"))();return true;}],hold:["Digit2",()=>{safeAction(()=>selectMode("hold"))();return true;}],wide:["Digit3",()=>{safeAction(()=>selectMode("wide"))();return true;}],follow:["Digit4",()=>{safeAction(()=>selectMode("follow"))();return true;}],focus:["Digit5",()=>{safeAction(()=>selectMode("focus"))();return true;}],mirror:["Digit6",()=>{safeAction(()=>selectMode("mirror"))();return true;}],full:["Digit7",()=>{safeAction(()=>selectMode("full"))();return true;}]};
  for(const [key,[code,action]] of Object.entries(bindings))game.keybindings.register(ID,"director-"+key,{name:"Stream Director: "+key,editable:[{key:code,modifiers:["Alt","Shift"]}],restricted:true,onDown:()=>game.user?.isGM?action():false});
  Hooks.on("updateSetting",refreshPanel);Hooks.on("userConnected",refreshPanel);
  Hooks.on("canvasTearDown",()=>{stopPick();stopMirror();});
