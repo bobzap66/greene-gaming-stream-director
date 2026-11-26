@@ -7,8 +7,12 @@ export function refreshObserverChoices(){
  const saved=setting("observerId");if(saved&&!choices[saved])choices[saved]="Unavailable observer ("+saved+")";
  config.choices=choices;
 }
+export const tabletopRegions={art:{x:5,y:5,w:90,h:90},chat:{x:78,y:5,w:21,h:90},combat:{x:2,y:5,w:20,h:35}};
+export const modeKeys={layoutEnabled:"tabletopLayoutEnabled",artEnabled:"tabletopArtEnabled",chatEnabled:"tabletopChatEnabled",combatEnabled:"tabletopCombatEnabled",chatScale:"tabletopChatScale",regions:"tabletopRegions",presentationEnabled:"tabletopPresentationEnabled",presentationChat:"tabletopShowChat",presentationCombat:"tabletopShowCombat"};
+for(const k of ["Navigation","Controls","Hotbar","Players","Pause","ChatInput","DismissArt","DismissJournal","PF2eHUD","CombatLimit","DismissDelay"])modeKeys["presentation"+k]="tabletopPresentation"+k;
+export const modeSetting=key=>setting(setting("observerMode")==="tabletop"?(modeKeys[key]??key):key);
 export function registerSettings(){
- const register=(key,data)=>game.settings.register(ID,key,{scope:"world",config:true,requiresReload:true,...data});
+ const register=(key,data)=>game.settings.register(ID,key,{scope:"world",config:["observerId","observerMode","enabled"].includes(key),requiresReload:true,...data});
  register("observerId",{name:"Stream observer",hint:"Dedicated non-GM account.",type:String,default:"",choices:{"":"Not selected"}});
  register("observerMode",{name:"Observer mode",hint:"Broadcast uses automatic camera direction. Tabletop locks map position and physical scale.",type:String,default:"broadcast",choices:{broadcast:"Broadcast",tabletop:"Tabletop"}});
  register("tabletopWidth",{name:"Tabletop: physical screen width (inches)",hint:"Measure the visible panel horizontally, not diagonally. Zero means use ruler calibration on the observer.",type:Number,default:0,requiresReload:false});
@@ -36,6 +40,74 @@ export function registerSettings(){
  register("regions",{name:"Broadcast regions",config:false,type:Object,default:defaultRegions,requiresReload:false});
  for(const key of ["art","chat","combat"])register(key+"Enabled",{name:"Position "+key,type:Boolean,default:true});
  register("chatScale",{name:"Chat text scale (%)",type:Number,default:100,range:{min:60,max:140,step:5}});
+ register("tabletopRegions",{name:"Tabletop regions",type:Object,default:tabletopRegions,config:false,requiresReload:false});
+ for(const [source,target] of Object.entries(modeKeys)){
+  if(["regions","presentationChat","presentationCombat"].includes(source))continue;
+  const spec=game.settings.settings.get(ID+"."+source);
+  const {type,range,choices}=spec;
+  const value=source==="layoutEnabled"?false:source==="artEnabled"?false:spec.default;
+  register(target,{name:spec.name.replace(/^Broadcast: /,"").replace(/broadcast/gi,"tabletop"),hint:spec.hint,type,range,choices,default:value,requiresReload:false});
+ }
+ register("sharingDestination",{name:"Sharing destination",type:String,default:"observer",choices:{observer:"Designated observer only",all:"All connected players"},requiresReload:false});
+ register("dismissCommand",{name:"Observer dismissal command",type:Object,default:{},config:false,requiresReload:false});
+ register("modeSettingsMigrated",{name:"Mode settings migration",type:Boolean,default:false,config:false,requiresReload:false});
+ Hooks.once("ready",async()=>{
+  if(!game.user?.isGM||setting("modeSettingsMigrated"))return;
+  try{
+   const storage=game.settings.storage.get("world");
+   for(const [source,target] of Object.entries(modeKeys)){
+    if(!source.startsWith("presentation")||["presentationChat","presentationCombat"].includes(source)||storage.getSetting(ID+"."+target))continue;
+    if(storage.getSetting(ID+"."+source))await game.settings.set(ID,target,setting(source));
+   }
+   await game.settings.set(ID,"modeSettingsMigrated",true);
+  }catch(e){console.error(ID,"Tabletop preference migration failed",e);}
+ });
+ registerCategoryMenus();
 }
 export const setting=key=>game.settings.get(ID,key);
 export function isObserver(){return !!game.user&&!game.user.isGM&&game.user.id===setting("observerId");}
+
+const groups={
+ Camera:["groupDistance","padding","minZoom","maxZoom","transition","frameMargin","wideMargin"],
+ Combat:["combatStyle","actionAware","actionHold","actionLimit","cinematicPadding"],
+ Broadcast:["presentationEnabled",...Object.keys(modeKeys).filter(k=>k.startsWith("presentation")&&k!=="presentationEnabled")],
+ "Broadcast layout":["layoutEnabled","artEnabled","chatEnabled","combatEnabled","chatScale"],
+ Tabletop:["tabletopWidth","tabletopGridInches","tabletopShowChat","tabletopShowCombat",...Object.values(modeKeys).filter(k=>k.startsWith("tabletopPresentation")), "tabletopLayoutEnabled","tabletopArtEnabled","tabletopChatEnabled","tabletopCombatEnabled","tabletopChatScale"],
+ Bookmarks:["bookmarkHold","bookmarkIndefinite"],
+ Sharing:["sharingDestination"]
+};
+function registerCategoryMenus(){
+ const {ApplicationV2}=foundry.applications.api;
+ for(const [name,keys] of Object.entries(groups)){
+  const id="ggsd-settings-"+name.toLowerCase().replaceAll(" ","-");
+  class Category extends ApplicationV2{
+   static DEFAULT_OPTIONS={id,window:{title:"Stream Director — "+name,resizable:true},position:{width:620,height:620}};
+   async _renderHTML(){return document.createElement("div");}
+   _replaceHTML(root,content){
+    content.replaceChildren(root);Object.assign(root.style,{overflowY:"auto",maxHeight:"100%",padding:"8px"});
+    const fields=new Map();
+    for(const key of keys){
+     const spec=game.settings.settings.get(ID+"."+key),row=document.createElement("div"),label=document.createElement("label");
+     row.className="form-group";label.textContent=spec.name;row.append(label);
+     const input=document.createElement(spec.choices?"select":"input");
+     if(spec.choices){for(const [v,n] of Object.entries(spec.choices)){const opt=document.createElement("option");opt.value=v;opt.textContent=n;input.append(opt);}}
+     else if(spec.type===Boolean)input.type="checkbox";
+     else if(spec.type===Number){input.type="number";if(spec.range)for(const k of ["min","max","step"])input[k]=spec.range[k];}
+     else input.type="text";
+     if(spec.type===Boolean)input.checked=setting(key);else input.value=String(setting(key));
+     input.id=id+"-"+key;label.htmlFor=input.id;row.append(input);root.append(row);fields.set(key,{input,spec});
+     if(spec.hint){const hint=document.createElement("p");hint.className="hint";hint.textContent=spec.hint;root.append(hint);}
+    }
+    const save=document.createElement("button");save.type="button";save.textContent="Save settings";
+    save.onclick=async()=>{if(!game.user?.isGM)return;save.disabled=true;try{
+     const changes=[];
+     for(const [key,{input,spec}] of fields){const value=spec.type===Boolean?input.checked:spec.type===Number?Number(input.value):input.value;if(spec.type===Number&&(!input.value||!input.checkValidity()||!Number.isFinite(value)))throw Error("Invalid value: "+spec.name);if(value!==setting(key))changes.push([key,value,spec]);}
+     let reload=false;for(const [key,value,spec] of changes){await game.settings.set(ID,key,value);reload||=!!spec.requiresReload;}
+     ui.notifications.info(reload?"Saved. Reload GM and observer clients to apply all changes.":"Stream Director settings saved.");await this.close();
+    }catch(e){ui.notifications.error(e.message);}finally{save.disabled=false;}};
+    root.append(save);
+   }
+  }
+  game.settings.registerMenu(ID,id,{name:name+" settings",label:"Configure "+name.toLowerCase(),hint:"Configure "+name.toLowerCase()+" preferences.",icon:"fas fa-gear",type:Category,restricted:true});
+ }
+}
