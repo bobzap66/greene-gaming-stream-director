@@ -68,6 +68,8 @@ function refreshPanel(){
  const command=effectiveCommand(setting("cameraCommand"),canvas.scene?.id,setting("observerId"));
  const status=root.querySelector("[data-status]");
  if(status)status.textContent=observer()?.active?"Observer online":observer()?"Observer offline":"No observer assigned";
+ const style=root.querySelector("[data-combat-style]");
+ if(style)style.value=setting("combatStyle");
  const current=root.querySelector("[data-mode]");
  if(current)current.textContent=labels[command.mode]??"Auto";
  for(const b of root.querySelectorAll("[data-camera]"))b.classList.toggle("active",b.dataset.camera===command.mode);
@@ -75,7 +77,7 @@ function refreshPanel(){
 export function registerGMDirector(){
  const {ApplicationV2}=foundry.applications.api;
  class DirectorPanel extends ApplicationV2{
-  static DEFAULT_OPTIONS={id:"ggsd-director",window:{title:"Stream Director",resizable:true},position:{width:400,height:310}};
+  static DEFAULT_OPTIONS={id:"ggsd-director",window:{title:"Stream Director",resizable:true},position:{width:400,height:350}};
   async _renderHTML(){panel=this;return document.createElement("div");}
   _replaceHTML(result,content){
    content.replaceChildren(result);Object.assign(result.style,{display:"grid",gap:"8px",padding:"4px"});
@@ -92,6 +94,10 @@ export function registerGMDirector(){
    const select=document.createElement("select");
    for(const [value,name] of [["cut","Cut"],["smooth","Smooth"],["cinematic","Cinematic"]]){const opt=document.createElement("option");opt.value=value;opt.textContent=name;select.append(opt);}
    select.value=speed;select.onchange=()=>{speed=select.value;};label.append(select);result.append(label);
+   const combatLabel=document.createElement("label");combatLabel.textContent="Combat style ";
+   const combatStyle=document.createElement("select");combatStyle.dataset.combatStyle="";
+   for(const [value,name] of [["tactical","Tactical"],["cinematic","Cinematic"]]){const opt=document.createElement("option");opt.value=value;opt.textContent=name;combatStyle.append(opt);}
+   combatStyle.value=setting("combatStyle");combatStyle.onchange=safeAction(async()=>{if(game.user?.isGM)await game.settings.set(ID,"combatStyle",combatStyle.value);});combatLabel.append(combatStyle);result.append(combatLabel);
    const note=document.createElement("small");note.textContent="Wide: explored area. Full: entire map. Follow: select one token. Focus: click the map. Scene changes reset Auto.";result.append(note);
    requestAnimationFrame(refreshPanel);
   }
