@@ -10,6 +10,11 @@ export function refreshObserverChoices(){
 export function registerSettings(){
  const register=(key,data)=>game.settings.register(ID,key,{scope:"world",config:true,requiresReload:true,...data});
  register("observerId",{name:"Stream observer",hint:"Dedicated non-GM account.",type:String,default:"",choices:{"":"Not selected"}});
+ register("observerMode",{name:"Observer mode",hint:"Broadcast uses automatic camera direction. Tabletop locks map position and physical scale.",type:String,default:"broadcast",choices:{broadcast:"Broadcast",tabletop:"Tabletop"}});
+ register("tabletopWidth",{name:"Tabletop: physical screen width (inches)",hint:"Measure the visible panel horizontally, not diagonally. Zero means use ruler calibration on the observer.",type:Number,default:0,requiresReload:false});
+ register("tabletopGridInches",{name:"Tabletop: physical grid size (inches)",type:Number,default:1,range:{min:.5,max:2,step:.05},requiresReload:false});
+ register("tabletopShowChat",{name:"Tabletop: show chat",type:Boolean,default:false,requiresReload:false});
+ register("tabletopShowCombat",{name:"Tabletop: show combat tracker",type:Boolean,default:false,requiresReload:false});
  register("enabled",{name:"Enable spectator camera",hint:"Disable Monk's Screen, Party Screen and Vision tracking first.",type:Boolean,default:false});
  const specs={groupDistance:["Party grouping distance (grid squares)",2,24,1],padding:["Camera padding without layout (grid squares)",0,8,1],minZoom:["Legacy minimum zoom (safe-area fit takes priority)",.1,2,.1],maxZoom:["Maximum zoom",.5,3,.1],transition:["Transition duration (ms)",100,2000,50],frameMargin:["Safe-area framing margin (% of group bounds)",0,60,5]};
  for(const [key,[name,min,max,step]] of Object.entries(specs))register(key,{name,type:Number,default:defaults[key],range:{min,max,step}});
