@@ -8,6 +8,34 @@ Manifest: https://github.com/bobzap66/greene-gaming-stream-director/releases/lat
 
 Enable the module in your world, select your observer account, disable Monk's Screen, Party Screen and Vision tracking, then enable the spectator camera and reload clients. Give the observer Observer access to individual party actors and the Party actor where applicable. No actor permissions are modified by this module.
 
+## Keyboard shortcuts
+
+All shortcuts below are defaults and can be customized in Foundry's Configure Controls (keybindings) menu.
+
+### GM controls
+
+| Shortcut | Action |
+| --- | --- |
+| `Alt+Shift+D` | Open or bring forward the Stream Director panel. |
+| `Alt+Shift+1` | Auto — resume automatic camera direction. |
+| `Alt+Shift+2` | Hold — suspend automatic camera movement. |
+| `Alt+Shift+3` | Wide Shot — frame explored and currently visible areas. |
+| `Alt+Shift+4` | Follow Token — select one token first; observer visibility is required. |
+| `Alt+Shift+5` | Focus Point — then click a location on the canvas. |
+| `Alt+Shift+6` | Mirror GM — follow the GM's camera position and zoom. |
+| `Alt+Shift+7` | Full Scene — frame the entire map. |
+| `Escape` | Cancel a pending Focus Point selection (fixed, not a configurable keybinding). |
+
+### Observer controls
+
+| Shortcut | Action |
+| --- | --- |
+| `Alt+Shift+U` | Toggle maintenance mode: temporarily restore the normal Foundry interface and sidebar, then press again to restore broadcast presentation and layout. |
+
+The maintenance shortcut works on the designated observer when presentation or layout is enabled. Camera direction continues running, world settings are unchanged, and refreshing the observer exits maintenance mode. Use it to access Game Settings without asking the GM to disable broadcast presentation.
+
+**Hotbar alternative:** Click **Create director hotbar macro** in the GM Director panel, then drag **Open Stream Director** from the Macros directory to your preferred hotbar slot.
+
 ## v0.4.4.1 — Observer maintenance and PF2e HUD
 
 Broadcast presentation now hides the PF2e HUD persistent controls by default using its specific DOM root, preserving independent hotbar visibility. No PF2e HUD preferences are modified. Press Alt+Shift+U on the designated observer browser to temporarily suspend presentation and layout styling, allowing ordinary access to Foundry settings. Press it again to restore configured presentation. Camera direction and camera safe-area framing continue unchanged. Maintenance is local and resets on reload; it does not modify world settings or other users. Dismissal timers are canceled during maintenance. Existing windows are not automatically re-timed unless rendered again. Live testing is required.
@@ -96,7 +124,7 @@ Configurable camera grouping, padding, zoom and transition duration. Experimenta
 
 ## Recovery
 
-Disable the camera and layout settings and reload, or disable the module. Restore Monk's Party tracking if desired. The v0.1.2 release remains available as a tested camera-only fallback. Expanded vision and cinematic controls are not implemented yet.
+For temporary observer UI access, press Alt+Shift+U. For a full rollback, disable presentation, camera and layout settings and reload, or disable the module. Restore Monk's Party tracking if desired. The v0.1.2 release remains available as a tested camera-only fallback.
 
 ## Development
 
