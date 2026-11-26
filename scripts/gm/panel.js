@@ -67,7 +67,7 @@ async function recallBookmark(extra){
  stopMirror();stopPick();
  const command=await publish("bookmark",extra);
  if(!command||generation!==bookmarkGeneration)return;
- if(setting("bookmarkIndefinite"))return;
+ if(setting("bookmarkIndefinite")||setting("observerMode")==="tabletop")return;
  const delay=setting("bookmarkHold")*1000+transitionDuration(extra.speed,setting("transition"));
  bookmarkTimer=setTimeout(safeAction(async()=>{
   if(generation!==bookmarkGeneration||!canvas.ready||canvas.scene.id!==command.sceneId||setting("observerId")!==command.observerId)return;
@@ -90,7 +90,7 @@ export async function selectMode(mode){
   await publish(mode,{tokenId:selected[0].id});return;
  }
  if(mode==="focus"){choosePoint();return;}
- if(mode==="mirror"){await publish(mode,view());startMirror();return;}
+ if(mode==="mirror"){await publish(mode,view());if(setting("observerMode")!=="tabletop")startMirror();return;}
  await publish(mode);
 }
 function refreshPanel(){
@@ -102,9 +102,9 @@ function refreshPanel(){
  const style=root.querySelector("[data-combat-style]");
  if(style)style.value=setting("combatStyle");
  const current=root.querySelector("[data-mode]");
- if(current)current.textContent=command.mode==="bookmark"?"Bookmark: "+(bookmarksFor(canvas.scene).find(b=>b.id===command.bookmarkId)?.name??"Saved shot"):(labels[command.mode]??"Auto");
+ if(current)current.textContent=(setting("observerMode")==="tabletop"?"Tabletop · ":"")+(command.mode==="bookmark"?"Bookmark: "+(bookmarksFor(canvas.scene).find(b=>b.id===command.bookmarkId)?.name??"Saved shot"):(labels[command.mode]??"Auto"));
  refreshBookmarks(root,command);
- for(const b of root.querySelectorAll("[data-camera]"))b.classList.toggle("active",b.dataset.camera===command.mode);
+ for(const b of root.querySelectorAll("[data-camera]")){b.classList.toggle("active",b.dataset.camera===command.mode);const tabletop=setting("observerMode")==="tabletop";if(b.dataset.camera==="mirror")b.title=tabletop?"Center display on current GM view (one time)":"Mirror GM";if(b.dataset.camera==="follow")b.title=tabletop?"Center display on selected visible token (one time)":"Follow token";if(["wide","full"].includes(b.dataset.camera))b.title=tabletop?"Center on map without changing scale":labels[b.dataset.camera];}
 }
 function refreshBookmarks(root,command){
  const section=root.querySelector("[data-bookmarks]");
