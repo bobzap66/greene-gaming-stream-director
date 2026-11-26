@@ -9,6 +9,7 @@ const calibration=()=>setting("tabletopCalibration");
 function pixelsPerInch(){
  const c=calibration();
  if(c?.signature===signature()&&Number.isFinite(c.ppi)&&c.ppi>0)return c.ppi;
+ if(c?.ppi&&c.signature!==signature())return null;
  const width=setting("tabletopWidth");
  return width>0?screen.width/width:null;
 }
