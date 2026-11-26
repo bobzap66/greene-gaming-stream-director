@@ -15,10 +15,13 @@ test("combat row limit follows active combatant and clamps at end",()=>{
  assert.deepEqual(combatRows(0,-1,3),[]);
 });
 test("content detection is limited to image and journal windows",()=>{
- const element=cls=>({matches:s=>s.split(", ").includes(cls)});
+ const element=(...classes)=>({matches:s=>s.split(", ").some(cls=>classes.includes(cls))});
  assert.equal(contentKind(element(".image-popout")),"art");
- assert.equal(contentKind(element(".journal-sheet")),"journal");
+ assert.equal(contentKind(element(".application",".journal-sheet",".journal-entry")),"journal");
  assert.equal(contentKind(element(".actor-sheet")),null);
+ assert.equal(contentKind(element(".journal-entry-page",".journal-sheet",".application")),null);
+ assert.equal(contentKind(element(".journal-sheet")),null);
+ assert.equal(contentKind({...element(".application",".journal-sheet"),parentElement:{closest:()=>({})}}),null);
  assert.equal(contentKind(null),null);
 });
 

@@ -37,6 +37,10 @@ The maintenance shortcut works on the designated observer when presentation or l
 
 **Hotbar alternative:** Click **Create director hotbar macro** in the GM Director panel, then drag **Open Stream Director** from the Macros directory to your preferred hotbar slot.
 
+## v0.4.5.1 — Journal dismissal hotfix
+
+Automatic journal dismissal now targets the parent journal application rather than embedded journal page sheets. Individual page render hooks cannot schedule separate dismissal timers, and the existing application-keyed timer prevents duplicate timers on the parent. The timer revalidates the window before closing it through Foundry's native lifecycle. Artwork dismissal and camera behavior remain unchanged. Applies to Broadcast and Tabletop. Live validation is required with Show to Players on a multi-page journal. Settings categories and separate mode layouts are deferred to a subsequent update.
+
 ## v0.4.5 — Tabletop foundation (experimental)
 
 In main module settings select Tabletop observer mode, select your dedicated observer, enable spectator camera and optionally enable broadcast presentation. Disable Lock View and other camera controllers in the test world; reload both clients. On the television, press Alt+Shift+C and adjust the reference square against a ruler until it measures one inch. Save calibration locally in that browser. Alternatively enter the measured horizontal visible screen width (not diagonal) in world settings. The desired physical grid size defaults to one inch. Ruler calibration overrides screen width when display metrics match; changes to resolution or device pixel ratio require recalibration. Gridless scenes retain the current scale. Physical sizing is intended for square grids; other grid geometries are not validated.
