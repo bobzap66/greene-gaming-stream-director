@@ -2,9 +2,9 @@
 // A command applies only to its original scene and designated observer.
 export const MODES=["auto","hold","wide","follow","focus","mirror","full"];
 export function effectiveCommand(command,sceneId,observerId){
- if(!command||!sceneId||!observerId||command.sceneId!==sceneId||command.observerId!==observerId||!MODES.includes(command.mode))return {mode:"auto"};
+ if(!command||!sceneId||!observerId||command.sceneId!==sceneId||command.observerId!==observerId||!([...MODES,"bookmark"].includes(command.mode)))return {mode:"auto"};
  if(command.mode==="follow"&&(typeof command.tokenId!=="string"||!command.tokenId))return {mode:"auto"};
- if(["focus","mirror"].includes(command.mode)&&(!Number.isFinite(command.x)||!Number.isFinite(command.y)||!Number.isFinite(command.scale)||command.scale<=0))return {mode:"auto"};
+ if(["focus","mirror","bookmark"].includes(command.mode)&&(!Number.isFinite(command.x)||!Number.isFinite(command.y)||!Number.isFinite(command.scale)||command.scale<=0))return {mode:"auto"};
  return command;
 }
 export function transitionDuration(speed,fallback=750){
@@ -28,6 +28,6 @@ export function manualTarget(command,{rect,center,current,sceneRect,exploredRect
  if(!token||!visible(token))return null;
  return frame(token);
  }
- if(command.mode==="focus"||command.mode==="mirror")return locationTarget(command.x,command.y,Math.min(maxScale,command.scale),rect,center);
+ if(["focus","mirror","bookmark"].includes(command.mode))return locationTarget(command.x,command.y,Math.min(maxScale,command.scale),rect,center);
  return null;
 }
