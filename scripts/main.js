@@ -117,7 +117,7 @@ Hooks.on("createChatMessage",message=>{
  const encounterKey=scene+"|"+encounter.id;
  const turnKey=[encounter.round,encounter.turn,encounter.combatant?.id].join("|");
  const fallbackIds=recentShot?.encounter===encounterKey&&recentShot.turn===turnKey&&recentShot.actorId===action.actorId?recentShot.ids.filter(id=>visibleIds.has(id)):[];
- actionDirector.record({encounter:encounterKey,action,now:performance.now(),holdMs:setting("actionHold"),fallbackIds});
+ actionDirector.record({encounter:encounterKey,action,now:performance.now(),holdMs:setting("actionHold"),limitMs:setting("actionLimit")*1000,fallbackIds});
  schedule();
 });
 Hooks.on("updateToken",(doc,change)=>{
