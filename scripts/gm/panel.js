@@ -179,9 +179,12 @@ export function registerGMDirector(){
  game.settings.registerMenu(ID,"gmDirector",{name:"GM Camera Director",label:"Open camera director",hint:"Direct the designated stream observer only.",icon:"fas fa-video",type:DirectorPanel,restricted:true});
  const bindings={open:["KeyD",()=>{open();return true;}],auto:["Digit1",()=>{safeAction(()=>selectMode("auto"))();return true;}],hold:["Digit2",()=>{safeAction(()=>selectMode("hold"))();return true;}],wide:["Digit3",()=>{safeAction(()=>selectMode("wide"))();return true;}],follow:["Digit4",()=>{safeAction(()=>selectMode("follow"))();return true;}],focus:["Digit5",()=>{safeAction(()=>selectMode("focus"))();return true;}],mirror:["Digit6",()=>{safeAction(()=>selectMode("mirror"))();return true;}],full:["Digit7",()=>{safeAction(()=>selectMode("full"))();return true;}]};
  for(const [key,[code,action]] of Object.entries(bindings))game.keybindings.register(ID,"director-"+key,{name:"Stream Director: "+key,editable:[{key:code,modifiers:["Alt","Shift"]}],restricted:true,onDown:()=>game.user?.isGM?action():false});
- Hooks.on("updateScene",(scene)=>{if(scene.id===canvas.scene?.id)refreshPanel();});
- Hooks.on("updateSetting",refreshPanel);Hooks.on("userConnected",refreshPanel);
- Hooks.on("canvasTearDown",()=>{cancelBookmark();stopPick();stopMirror();});
- Hooks.on("canvasReady",()=>{if(game.user?.isGM&&setting("cameraCommand")?.mode!=="auto")safeAction(()=>publish("auto"))();refreshPanel();});
- Hooks.once("ready",()=>{if(game.user?.isGM&&setting("cameraCommand")?.mode!=="auto"&&canvas.ready)safeAction(()=>publish("auto"))();});
+ Hooks.once("ready",()=>{
+  if(!game.user?.isGM)return;
+  Hooks.on("updateScene",scene=>{if(scene.id===canvas.scene?.id)refreshPanel();});
+  Hooks.on("updateSetting",refreshPanel);Hooks.on("userConnected",refreshPanel);
+  Hooks.on("canvasTearDown",()=>{cancelBookmark();stopPick();stopMirror();});
+  Hooks.on("canvasReady",()=>{if(setting("cameraCommand")?.mode!=="auto")safeAction(()=>publish("auto"))();refreshPanel();});
+  if(setting("cameraCommand")?.mode!=="auto"&&canvas.ready)safeAction(()=>publish("auto"))();
+ });
 }

@@ -37,6 +37,14 @@ The maintenance shortcut works on the designated observer when presentation or l
 
 **Hotbar alternative:** Click **Create director hotbar macro** in the GM Director panel, then drag **Open Stream Director** from the Macros directory to your preferred hotbar slot.
 
+## v0.4.5.2 — Journal registry discovery and client performance
+
+The native Foundry v14 application registry is checked during presentation reconciliation (including the existing one-second heartbeat). Connected parent journal windows receive one dismissal timer regardless of the render-hook timing or rendered flag; embedded pages remain excluded. Native close is used, with an in-flight guard against overlapping close requests. Artwork still uses its render-hook path. Automatic journal dismissal can also catch locally opened journals, not just GM-shared ones. Maintenance cancels pending timers; on resuming, open journals receive a fresh timer. No changes to calibration, layouts, settings categories or camera behavior. Live validation required.
+
+### Client performance
+
+Camera and presentation heartbeats now start only when their observer functionality is active and stop when disabled or reassigned. Layout DOM monitoring is attached only on the active observer with layout enabled, and disconnected during maintenance or when reassigned. Ordinary players retain module registration and lightweight guarded hooks but no recurring Stream Director timers, layout DOM monitoring, or scheduled rendering work. GM director runtime hooks are registered only for the GM. Observer changes are handled through settings updates (reload when Foundry requests it). No formal CPU/RAM benchmarks have been performed.
+
 ## v0.4.5.1 — Journal dismissal hotfix
 
 Automatic journal dismissal now targets the parent journal application rather than embedded journal page sheets. Individual page render hooks cannot schedule separate dismissal timers, and the existing application-keyed timer prevents duplicate timers on the parent. The timer revalidates the window before closing it through Foundry's native lifecycle. Artwork dismissal and camera behavior remain unchanged. Applies to Broadcast and Tabletop. Live validation is required with Show to Players on a multi-page journal. Settings categories and separate mode layouts are deferred to a subsequent update.

@@ -1,21 +1,27 @@
 import {ID,setting,isObserver} from "../settings.js";
 import {maintenanceActive} from "./maintenance.js";
-import {hideRules,presentationCSS,combatRows,contentKind} from "./policy.js";
+import {hideRules,presentationCSS,combatRows,contentKind,openJournalApplications} from "./policy.js";
 const showChat=()=>setting("observerMode")==="tabletop"?setting("tabletopShowChat"):setting("presentationChat");
 const showCombat=()=>setting("observerMode")==="tabletop"?setting("tabletopShowCombat"):setting("presentationCombat");
+let heartbeat=null;
 let style,queued=false,busy=false,ownedCombat=null,chatActivated=false;
 const timers=new Map();
+const closing=new Set();
 const enabled=()=>game.ready&&isObserver()&&!maintenanceActive()&&setting("presentationEnabled");
 function clearTimers(){for(const timer of timers.values())clearTimeout(timer);timers.clear();}
 function dismiss(app){
- if(!enabled()||!app?.rendered||typeof app.close!=="function")return;
+ if(!enabled()||!app||typeof app.close!=="function"||closing.has(app))return;
  const el=app.element?.[0]??app.element;
  const kind=contentKind(el);
+ if(kind==="journal"?el.isConnected!==true:!app.rendered)return;
  if(!kind||!setting(kind==="art"?"presentationDismissArt":"presentationDismissJournal"))return;
  if(timers.has(app))return;
  timers.set(app,setTimeout(()=>{
   timers.delete(app);
-  if(enabled()&&app.rendered&&contentKind(app.element?.[0]??app.element)===kind&&setting(kind==="art"?"presentationDismissArt":"presentationDismissJournal"))Promise.resolve().then(()=>app.close()).catch(e=>console.warn(ID,"Automatic "+kind+" dismissal failed",e));
+  const current=app.element?.[0]??app.element;
+  if(!enabled()||contentKind(current)!==kind||!(kind==="journal"?current.isConnected:app.rendered)||!setting(kind==="art"?"presentationDismissArt":"presentationDismissJournal"))return;
+  closing.add(app);
+  Promise.resolve().then(()=>app.close()).catch(e=>console.warn(ID,"Automatic "+kind+" dismissal failed",e)).finally(()=>closing.delete(app));
  },setting("presentationDismissDelay")*1000));
 }
 function clearApp(app){if(timers.has(app)){clearTimeout(timers.get(app));timers.delete(app);}}
@@ -35,6 +41,10 @@ async function reconcile(){
  if(busy){schedule();return;}busy=true;
  try{
   const on=enabled();
+  if(on&&setting("presentationDismissJournal")){
+   for(const app of openJournalApplications(foundry.applications.instances))dismiss(app);
+  }
+  if(!on&&!style&&!ownedCombat&&!timers.size)return;
   if(!style){style=document.createElement("style");style.id="ggsd-presentation";document.head.append(style);}
   const css=presentationCSS({enabled:on,...(on?Object.fromEntries(Object.keys(hideRules).map(k=>[k,setting(k)])): {}),presentationChat:on&&showChat()})+(on&&setting("observerMode")==="tabletop"&&!showChat()?"\n#sidebar, #sidebar-content, #sidebar-tabs{display:none!important;}":"");
   if(style.textContent!==css)style.textContent=css;
@@ -61,10 +71,18 @@ async function reconcile(){
   }
  }catch(e){console.warn(ID,"Broadcast presentation",e);}finally{busy=false;}
 }
-function schedule(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;reconcile();});}
+function schedule(){if(!game.ready||(!enabled()&&!ownedCombat&&!timers.size&&!style?.textContent)||queued)return;queued=true;requestAnimationFrame(()=>{queued=false;reconcile();});}
 export function registerPresentation(){
  for(const event of ["renderApplication","renderApplicationV2"])Hooks.on(event,app=>{dismiss(app);if(enabled())schedule();});
  for(const event of ["closeApplication","closeApplicationV2"])Hooks.on(event,clearApp);
  for(const event of ["updateCombat","createCombat","deleteCombat","updateCombatant","createCombatant","deleteCombatant","combatTurnChange","canvasReady","updateSetting","ggsdMaintenanceChanged"])Hooks.on(event,schedule);
- Hooks.once("ready",()=>{schedule();setInterval(()=>{if(enabled()||ownedCombat)schedule();},1000);});
+ function syncPresentationRole(){
+  if(enabled()){
+   if(heartbeat===null)heartbeat=setInterval(schedule,1000);
+  }else if(heartbeat!==null){clearInterval(heartbeat);heartbeat=null;}
+  schedule();
+ }
+ Hooks.once("ready",syncPresentationRole);
+ Hooks.on("updateSetting",syncPresentationRole);
+ Hooks.on("ggsdMaintenanceChanged",syncPresentationRole);
 }
