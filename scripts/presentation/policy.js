@@ -32,3 +32,13 @@ export function contentKind(element){
  if(element.matches(".journal-sheet, .journal-entry")&&element.matches(".application")&&!element.parentElement?.closest(".journal-entry"))return "journal";
  return null;
 }
+
+// The v14 registry contains actual application instances, not plain object properties.
+// Require a connected parent journal window; never infer visibility from document data.
+export function openJournalApplications(instances){
+ if(typeof instances?.values!=="function")return [];
+ return Array.from(instances.values()).filter(app=>{
+  const el=app?.element?.[0]??app?.element;
+  return el?.isConnected===true&&contentKind(el)==="journal"&&typeof app.close==="function";
+ });
+}
