@@ -22,6 +22,10 @@ export function registerSettings(){
  register("layoutEnabled",{name:"Enable broadcast layout",hint:"Observer-only window and chat positioning.",type:Boolean,default:false});
  register("bookmarkHold",{name:"Bookmark hold duration (seconds)",hint:"Return to the preceding camera mode after this hold plus the selected transition duration.",type:Number,default:10,range:{min:2,max:60,step:1},requiresReload:false});
  register("bookmarkIndefinite",{name:"Hold bookmarks indefinitely",hint:"Disable automatic return for subsequently recalled bookmarks.",type:Boolean,default:false,requiresReload:false});
+ register("presentationEnabled",{name:"Enable broadcast presentation",hint:"Observer-only interface cleanup and automatic presentation. Disable Monk's Common Display UI management before enabling.",type:Boolean,default:false,requiresReload:false});
+ for(const [key,name] of Object.entries({Navigation:"Hide scene navigation",Controls:"Hide canvas controls",Hotbar:"Hide macro hotbar",Players:"Hide player list",Pause:"Hide pause indicator",ChatInput:"Hide chat input",Chat:"Show chat log",Combat:"Automatically display combat tracker",DismissArt:"Automatically dismiss artwork",DismissJournal:"Automatically dismiss journals"}))register("presentation"+key,{name:"Broadcast: "+name,type:Boolean,default:true,requiresReload:false});
+ register("presentationCombatLimit",{name:"Broadcast: visible combatants",hint:"Limit native observer combat tracker rows around the current turn.",type:Number,default:3,range:{min:1,max:20,step:1},requiresReload:false});
+ register("presentationDismissDelay",{name:"Broadcast: artwork and journal dismissal (seconds)",type:Number,default:10,range:{min:2,max:60,step:1},requiresReload:false});
  register("cameraCommand",{name:"GM camera command",config:false,type:Object,default:{mode:"auto"},requiresReload:false});
  register("regions",{name:"Broadcast regions",config:false,type:Object,default:defaultRegions,requiresReload:false});
  for(const key of ["art","chat","combat"])register(key+"Enabled",{name:"Position "+key,type:Boolean,default:true});
