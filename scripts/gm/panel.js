@@ -1,10 +1,17 @@
 import {ID,setting} from "../settings.js";
 import {MODES,effectiveCommand} from "../camera/manual.js";
+import {sceneBookmarks,putBookmark,removeBookmark,bookmarkCommand} from "../camera/bookmarks.js";
 import {directorMacroCommand} from "../camera/hybrid.js";
 let panel, mirrorTimer, mirrorBusy=false, mirrorGeneration=0, commandQueue=Promise.resolve(), pickCleanup;
 const labels={auto:"Auto",hold:"Hold",wide:"Wide shot",follow:"Follow token",focus:"Focus point",mirror:"Mirror GM",full:"Full Scene"};
 const icons={auto:"fa-crosshairs",hold:"fa-pause",wide:"fa-expand",follow:"fa-person-walking",focus:"fa-location-dot",mirror:"fa-display",full:"fa-map"};
 let speed="smooth";
+let bookmarkQueue=Promise.resolve();
+const bookmarksFor=scene=>sceneBookmarks(scene?.getFlag(ID,"bookmarks"));
+function changeBookmarks(scene,change){
+ const task=bookmarkQueue.catch(()=>{}).then(()=>{if(!game.user?.isGM||!scene)return;return scene.setFlag(ID,"bookmarks",change(bookmarksFor(scene)));});
+ bookmarkQueue=task;return task;
+}
 function stopMirror(){mirrorGeneration++;clearInterval(mirrorTimer);mirrorTimer=null;}
 function stopPick(){pickCleanup?.();pickCleanup=null;}
 function observer(){return game.users.get(setting("observerId"));}
@@ -72,13 +79,47 @@ function refreshPanel(){
  const style=root.querySelector("[data-combat-style]");
  if(style)style.value=setting("combatStyle");
  const current=root.querySelector("[data-mode]");
- if(current)current.textContent=labels[command.mode]??"Auto";
+ if(current)current.textContent=command.mode==="bookmark"?"Bookmark: "+(bookmarksFor(canvas.scene).find(b=>b.id===command.bookmarkId)?.name??"Saved shot"):(labels[command.mode]??"Auto");
+ refreshBookmarks(root,command);
  for(const b of root.querySelectorAll("[data-camera]"))b.classList.toggle("active",b.dataset.camera===command.mode);
+}
+function refreshBookmarks(root,command){
+ const section=root.querySelector("[data-bookmarks]");
+ if(!section)return;
+ const scene=canvas.ready?canvas.scene:null;
+ const list=bookmarksFor(scene);
+ const signature=JSON.stringify([scene?.id,list,command.mode,command.bookmarkId]);
+ if(section.dataset.signature===signature)return;
+ section.dataset.signature=signature;section.replaceChildren();
+ const heading=document.createElement("strong");heading.textContent="Scene bookmarks"+(scene?" — "+scene.name:"");section.append(heading);
+ const form=document.createElement("div");Object.assign(form.style,{display:"flex",gap:"5px"});
+ const name=document.createElement("input");name.type="text";name.placeholder="Shot name";name.maxLength=80;name.disabled=!scene;form.append(name);
+ const save=document.createElement("button");save.type="button";save.textContent="Save GM view";save.disabled=!scene;
+ save.onclick=safeAction(async()=>{
+  if(!game.user?.isGM||!canvas.ready||canvas.scene.id!==scene?.id)return;
+  if(!name.value.trim()){ui.notifications.warn("Enter a bookmark name.");return;}
+  const bookmark={id:foundry.utils.randomID(),name:name.value,...view(),speed};
+  await changeBookmarks(scene,data=>putBookmark(data,bookmark));name.value="";refreshPanel();
+ });form.append(save);section.append(form);
+ const rows=document.createElement("div");Object.assign(rows.style,{display:"grid",gap:"4px",maxHeight:"180px",overflowY:"auto"});
+ if(!list.length){const empty=document.createElement("small");empty.textContent="No saved shots on this scene.";rows.append(empty);}
+ for(const shot of list){
+  const row=document.createElement("div");Object.assign(row.style,{display:"grid",gridTemplateColumns:"minmax(0,1fr) auto auto auto",gap:"4px"});
+  const recall=document.createElement("button");recall.type="button";recall.textContent=shot.name;recall.title=shot.scale.toFixed(2)+"× · "+shot.speed;recall.classList.toggle("active",command.mode==="bookmark"&&command.bookmarkId===shot.id);
+  recall.onclick=safeAction(async()=>{if(!game.user?.isGM||!canvas.ready||canvas.scene.id!==scene.id)return;const fresh=bookmarksFor(scene).find(b=>b.id===shot.id);const extra=bookmarkCommand(fresh);if(!extra)return;stopMirror();stopPick();await publish("bookmark",extra);});
+  const transition=document.createElement("select");transition.title="Saved transition";
+  for(const [value,label] of [["cut","Cut"],["smooth","Smooth"],["cinematic","Cinematic"]]){const opt=document.createElement("option");opt.value=value;opt.textContent=label;transition.append(opt);}
+  transition.value=shot.speed;transition.onchange=safeAction(async()=>{const value=transition.value;await changeBookmarks(scene,data=>{const fresh=data.find(b=>b.id===shot.id);return fresh?putBookmark(data,{...fresh,speed:value}):data;});refreshPanel();});
+  const update=document.createElement("button");update.type="button";update.textContent="Update";update.title="Replace with current GM view";update.onclick=safeAction(async()=>{if(!game.user?.isGM||!canvas.ready||canvas.scene.id!==scene.id)return;const position=view();await changeBookmarks(scene,data=>{const fresh=data.find(b=>b.id===shot.id);return fresh?putBookmark(data,{...fresh,...position}):data;});refreshPanel();});
+  const del=document.createElement("button");del.type="button";del.textContent="×";del.title="Delete saved shot";del.onclick=safeAction(async()=>{if(!game.user?.isGM)return;const confirmed=await foundry.applications.api.DialogV2.confirm({window:{title:"Delete camera bookmark"},content:"<p>Delete this saved shot?</p>"});if(!confirmed)return;await changeBookmarks(scene,data=>removeBookmark(data,shot.id));refreshPanel();});
+  row.append(recall,transition,update,del);rows.append(row);
+ }
+ section.append(rows);
 }
 export function registerGMDirector(){
  const {ApplicationV2}=foundry.applications.api;
  class DirectorPanel extends ApplicationV2{
-  static DEFAULT_OPTIONS={id:"ggsd-director",window:{title:"Stream Director",resizable:true},position:{width:400,height:390}};
+  static DEFAULT_OPTIONS={id:"ggsd-director",window:{title:"Stream Director",resizable:true},position:{width:480,height:560}};
   async _renderHTML(){panel=this;return document.createElement("div");}
   _replaceHTML(result,content){
    content.replaceChildren(result);Object.assign(result.style,{display:"grid",gap:"8px",padding:"4px"});
@@ -105,6 +146,7 @@ export function registerGMDirector(){
     if(!existing)existing=await Macro.create({name:"Open Stream Director",type:"script",img:"icons/svg/video.svg",command:directorMacroCommand});
     if(existing)ui.notifications.info("Open Stream Director macro is ready. Drag it from the Macros directory onto your hotbar.");
    });result.append(macro);
+   const bookmarks=document.createElement("section");bookmarks.dataset.bookmarks="";Object.assign(bookmarks.style,{display:"grid",gap:"5px"});result.append(bookmarks);
    const note=document.createElement("small");note.textContent="Wide: explored area. Full: entire map. Follow: select one token. Focus: click the map. Scene changes reset Auto.";result.append(note);
    requestAnimationFrame(refreshPanel);
   }
@@ -114,6 +156,7 @@ export function registerGMDirector(){
  game.settings.registerMenu(ID,"gmDirector",{name:"GM Camera Director",label:"Open camera director",hint:"Direct the designated stream observer only.",icon:"fas fa-video",type:DirectorPanel,restricted:true});
  const bindings={open:["KeyD",()=>{open();return true;}],auto:["Digit1",()=>{safeAction(()=>selectMode("auto"))();return true;}],hold:["Digit2",()=>{safeAction(()=>selectMode("hold"))();return true;}],wide:["Digit3",()=>{safeAction(()=>selectMode("wide"))();return true;}],follow:["Digit4",()=>{safeAction(()=>selectMode("follow"))();return true;}],focus:["Digit5",()=>{safeAction(()=>selectMode("focus"))();return true;}],mirror:["Digit6",()=>{safeAction(()=>selectMode("mirror"))();return true;}],full:["Digit7",()=>{safeAction(()=>selectMode("full"))();return true;}]};
  for(const [key,[code,action]] of Object.entries(bindings))game.keybindings.register(ID,"director-"+key,{name:"Stream Director: "+key,editable:[{key:code,modifiers:["Alt","Shift"]}],restricted:true,onDown:()=>game.user?.isGM?action():false});
+ Hooks.on("updateScene",(scene)=>{if(scene.id===canvas.scene?.id)refreshPanel();});
  Hooks.on("updateSetting",refreshPanel);Hooks.on("userConnected",refreshPanel);
  Hooks.on("canvasTearDown",()=>{stopPick();stopMirror();});
  Hooks.on("canvasReady",()=>{if(game.user?.isGM&&setting("cameraCommand")?.mode!=="auto")safeAction(()=>publish("auto"))();refreshPanel();});

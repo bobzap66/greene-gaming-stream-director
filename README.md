@@ -8,6 +8,12 @@ Manifest: https://github.com/bobzap66/greene-gaming-stream-director/releases/lat
 
 Enable the module in your world, select your observer account, disable Monk's Screen, Party Screen and Vision tracking, then enable the spectator camera and reload clients. Give the observer Observer access to individual party actors and the Party actor where applicable. No actor permissions are modified by this module.
 
+## v0.4.3 — Scene camera bookmarks and action timing
+
+Open the GM director, compose a shot in the GM canvas, enter a name and click Save GM view. Each scene stores its own persistent bookmarks in scene flags. Click a saved name to recall it on the configured observer, using its saved transition. The GM camera itself is unchanged. Update replaces a bookmark's position and zoom with the current GM view; the transition selector edits its saved speed; delete removes the saved shot after confirmation. Bookmarks are manual camera overrides and scene changes restore Auto. The observer centers the saved world position in its broadcast safe area and applies the configured maximum zoom; GM and observer viewport dimensions may produce different crops. Fog and ownership are unchanged. Scene flags are not secret storage.
+
+Combat action hold now defaults to six seconds for new settings and supports 1–15 seconds. Continuous same-actor action limit defaults to 30 seconds and offers 10–120 seconds in five-second increments or Unlimited. A finite limit never truncates the initial configured hold. Existing saved action hold values remain unchanged. Unlimited still expires after the normal hold with no new roll. These settings apply to Cinematic and Hybrid. Live validation is required.
+
 ## v0.4.2 — Hybrid combat and director macro
 
 Select Hybrid in the GM Camera Director combat style menu. Auto holds the tactical encounter-wide composition during initiative changes, movement and targeting. An eligible public roll switches to cinematic action framing for the configured action hold, then returns to tactical. Follow-up rolls and reactions use the existing bounded action director. Target selection alone does not zoom in; turn-local targeting continues behind the scenes to provide fallback targets for public rolls. Establishing shots, hidden active combatants, manual overrides and observer visibility checks retain priority. Disabling action awareness makes Hybrid behave tactically.

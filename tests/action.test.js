@@ -13,7 +13,7 @@ test("multiple targets deduplicate and reject hidden or remote UUIDs",()=>{
  assert.deepEqual(parse(m).targetIds,["b","c"]);
 });
 const a={id:"a"},b={id:"b"},c={id:"c"};
-const record=(d,now,patch={})=>d.record({encounter:"e",action:{id:"m"+now,actorId:"a",targetIds:["b"]},now,holdMs:3200,...patch});
+const record=(d,now,patch={})=>d.record({encounter:"e",action:{id:"m"+now,actorId:"a",targetIds:["b"]},now,holdMs:3200,limitMs:10000,...patch});
 const shot=(d,now,patch={})=>d.select({encounter:"e",now,visiblePoints:[a,b,c],...patch});
 test("action shot holds across initiative until expiry",()=>{
  const d=createActionDirector();record(d,0);
@@ -48,4 +48,19 @@ test("encounter changes and explicit reset clear pending action",()=>{
  const d=createActionDirector();record(d,0);
  assert.equal(shot(d,1,{encounter:"other"}),null);
  record(d,2);d.reset();assert.equal(shot(d,3),null);
+});
+
+test("extended thirty-second limit allows a longer action chain",()=>{
+ const d=createActionDirector();
+ for(let now=0;now<=28000;now+=4000)record(d,now,{holdMs:6000,limitMs:30000});
+ assert.deepEqual(shot(d,29999),[a,b]);assert.equal(shot(d,30000),null);
+});
+test("unlimited chain still expires when rolls stop",()=>{
+ const d=createActionDirector();
+ for(let now=0;now<=40000;now+=4000)record(d,now,{holdMs:6000,limitMs:0});
+ assert.deepEqual(shot(d,45999),[a,b]);assert.equal(shot(d,46000),null);
+});
+test("finite limit never cuts initial hold short",()=>{
+ const d=createActionDirector();record(d,0,{holdMs:15000,limitMs:10000});
+ assert.deepEqual(shot(d,14999),[a,b]);assert.equal(shot(d,15000),null);
 });
