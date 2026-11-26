@@ -8,6 +8,10 @@ Manifest: https://github.com/bobzap66/greene-gaming-stream-director/releases/lat
 
 Enable the module in your world, select your observer account, disable Monk's Screen, Party Screen and Vision tracking, then enable the spectator camera and reload clients. Give the observer Observer access to individual party actors and the Party actor where applicable. No actor permissions are modified by this module.
 
+## v0.4.3.1 — Temporary bookmark recall
+
+Bookmarks now restore the preceding camera mode by default after a ten-second hold plus the configured transition duration. Configure 2–60 seconds or enable Hold bookmarks indefinitely. Recalling another bookmark restarts the hold while retaining the original return mode. Manual commands and scene changes cancel pending returns. Mirror resumes live tracking; unavailable followed tokens fall back to Auto. Timing is managed by the recalling GM client and is approximate, not an observer animation acknowledgment. Settings apply on subsequent recalls.
+
 ## v0.4.3 — Scene camera bookmarks and action timing
 
 Open the GM director, compose a shot in the GM canvas, enter a name and click Save GM view. Each scene stores its own persistent bookmarks in scene flags. Click a saved name to recall it on the configured observer, using its saved transition. The GM camera itself is unchanged. Update replaces a bookmark's position and zoom with the current GM view; the transition selector edits its saved speed; delete removes the saved shot after confirmation. Bookmarks are manual camera overrides and scene changes restore Auto. The observer centers the saved world position in its broadcast safe area and applies the configured maximum zoom; GM and observer viewport dimensions may produce different crops. Fog and ownership are unchanged. Scene flags are not secret storage.
