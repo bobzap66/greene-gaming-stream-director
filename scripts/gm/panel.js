@@ -1,11 +1,13 @@
 import {ID,setting} from "../settings.js";
-import {MODES,effectiveCommand} from "../camera/manual.js";
+import {MODES,effectiveCommand,transitionDuration} from "../camera/manual.js";
 import {sceneBookmarks,putBookmark,removeBookmark,bookmarkCommand} from "../camera/bookmarks.js";
 import {directorMacroCommand} from "../camera/hybrid.js";
 let panel, mirrorTimer, mirrorBusy=false, mirrorGeneration=0, commandQueue=Promise.resolve(), pickCleanup;
 const labels={auto:"Auto",hold:"Hold",wide:"Wide shot",follow:"Follow token",focus:"Focus point",mirror:"Mirror GM",full:"Full Scene"};
 const icons={auto:"fa-crosshairs",hold:"fa-pause",wide:"fa-expand",follow:"fa-person-walking",focus:"fa-location-dot",mirror:"fa-display",full:"fa-map"};
 let speed="smooth";
+let bookmarkTimer=null,bookmarkGeneration=0,bookmarkReturn=null;
+function cancelBookmark(){bookmarkGeneration++;clearTimeout(bookmarkTimer);bookmarkTimer=null;bookmarkReturn=null;}
 let bookmarkQueue=Promise.resolve();
 const bookmarksFor=scene=>sceneBookmarks(scene?.getFlag(ID,"bookmarks"));
 function changeBookmarks(scene,change){
@@ -23,10 +25,11 @@ async function publish(mode,extra={}){
  if(!game.user?.isGM||!canvas.ready)return;
  const sceneId=canvas.scene.id,observerId=setting("observerId");
  if(!observerId){ui.notifications.warn("Select a stream observer in Stream Director settings first.");return;}
+ if(mode!=="bookmark")cancelBookmark();
  const command={mode,sceneId,observerId,speed,issuedAt:Date.now(),...extra};
  const task=commandQueue.catch(()=>{}).then(()=>game.settings.set(ID,"cameraCommand",command));
  commandQueue=task;
- await task;refreshPanel();
+ await task;refreshPanel();return command;
 }
 function safeAction(fn){return (...args)=>Promise.resolve().then(()=>fn(...args)).catch(e=>{console.error(ID,e);ui.notifications.error("Stream Director: "+e.message);});}
 function startMirror(){
@@ -57,9 +60,29 @@ function choosePoint(){
  el.addEventListener("click",click,true);window.addEventListener("keydown",key,true);
  pickCleanup=()=>{el.removeEventListener("click",click,true);window.removeEventListener("keydown",key,true);};
 }
+async function recallBookmark(extra){
+ const previous=bookmarkReturn??effectiveCommand(setting("cameraCommand"),canvas.scene.id,setting("observerId"));
+ cancelBookmark();const generation=bookmarkGeneration;
+ bookmarkReturn=previous.mode==="bookmark"?{mode:"auto"}:previous;
+ stopMirror();stopPick();
+ const command=await publish("bookmark",extra);
+ if(!command||generation!==bookmarkGeneration)return;
+ if(setting("bookmarkIndefinite"))return;
+ const delay=setting("bookmarkHold")*1000+transitionDuration(extra.speed,setting("transition"));
+ bookmarkTimer=setTimeout(safeAction(async()=>{
+  if(generation!==bookmarkGeneration||!canvas.ready||canvas.scene.id!==command.sceneId||setting("observerId")!==command.observerId)return;
+  const live=setting("cameraCommand");if(live?.mode!=="bookmark"||live.issuedAt!==command.issuedAt||live.bookmarkId!==command.bookmarkId){cancelBookmark();return;}
+  const prior=bookmarkReturn??{mode:"auto"};cancelBookmark();
+  if(prior.mode==="mirror"){await publish("mirror",{...view(),speed:prior.speed});startMirror();return;}
+  const {mode,tokenId,x,y,scale,speed:priorSpeed}=prior;
+  if(mode==="follow"&&(!canvas.tokens.get(tokenId)||canvas.tokens.get(tokenId).document.hidden)){await publish("auto");return;}
+  const fields={};for(const [k,v] of Object.entries({tokenId,x,y,scale,speed:priorSpeed}))if(v!==undefined)fields[k]=v;
+  await publish(mode,fields);
+ }),delay);
+}
 export async function selectMode(mode){
  if(!game.user?.isGM||!canvas.ready||!MODES.includes(mode))return;
- stopMirror();stopPick();
+ cancelBookmark();stopMirror();stopPick();
  if(mode==="follow"){
   const selected=canvas.tokens.controlled;
   if(selected.length!==1){ui.notifications.warn("Select exactly one token to follow.");return;}
@@ -106,7 +129,7 @@ function refreshBookmarks(root,command){
  for(const shot of list){
   const row=document.createElement("div");Object.assign(row.style,{display:"grid",gridTemplateColumns:"minmax(0,1fr) auto auto auto",gap:"4px"});
   const recall=document.createElement("button");recall.type="button";recall.textContent=shot.name;recall.title=shot.scale.toFixed(2)+"× · "+shot.speed;recall.classList.toggle("active",command.mode==="bookmark"&&command.bookmarkId===shot.id);
-  recall.onclick=safeAction(async()=>{if(!game.user?.isGM||!canvas.ready||canvas.scene.id!==scene.id)return;const fresh=bookmarksFor(scene).find(b=>b.id===shot.id);const extra=bookmarkCommand(fresh);if(!extra)return;stopMirror();stopPick();await publish("bookmark",extra);});
+  recall.onclick=safeAction(async()=>{if(!game.user?.isGM||!canvas.ready||canvas.scene.id!==scene.id)return;const fresh=bookmarksFor(scene).find(b=>b.id===shot.id);const extra=bookmarkCommand(fresh);if(!extra)return;await recallBookmark(extra);});
   const transition=document.createElement("select");transition.title="Saved transition";
   for(const [value,label] of [["cut","Cut"],["smooth","Smooth"],["cinematic","Cinematic"]]){const opt=document.createElement("option");opt.value=value;opt.textContent=label;transition.append(opt);}
   transition.value=shot.speed;transition.onchange=safeAction(async()=>{const value=transition.value;await changeBookmarks(scene,data=>{const fresh=data.find(b=>b.id===shot.id);return fresh?putBookmark(data,{...fresh,speed:value}):data;});refreshPanel();});
@@ -158,7 +181,7 @@ export function registerGMDirector(){
  for(const [key,[code,action]] of Object.entries(bindings))game.keybindings.register(ID,"director-"+key,{name:"Stream Director: "+key,editable:[{key:code,modifiers:["Alt","Shift"]}],restricted:true,onDown:()=>game.user?.isGM?action():false});
  Hooks.on("updateScene",(scene)=>{if(scene.id===canvas.scene?.id)refreshPanel();});
  Hooks.on("updateSetting",refreshPanel);Hooks.on("userConnected",refreshPanel);
- Hooks.on("canvasTearDown",()=>{stopPick();stopMirror();});
+ Hooks.on("canvasTearDown",()=>{cancelBookmark();stopPick();stopMirror();});
  Hooks.on("canvasReady",()=>{if(game.user?.isGM&&setting("cameraCommand")?.mode!=="auto")safeAction(()=>publish("auto"))();refreshPanel();});
  Hooks.once("ready",()=>{if(game.user?.isGM&&setting("cameraCommand")?.mode!=="auto"&&canvas.ready)safeAction(()=>publish("auto"))();});
 }
