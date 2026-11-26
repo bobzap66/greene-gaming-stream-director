@@ -19,6 +19,7 @@ const combatDirector=createCombatDirector();
 let recentShot=null;
 const explorationCache=createExplorationCache();
 let wideKey=null;
+let heartbeat=null;
 let timer,flight=null,last=null,mode=null,partyId=null,sceneId=null,discardedCommand=null;
 Hooks.once("init",()=>{registerSettings();registerEditor();registerLayout();registerGMDirector();registerPresentation();registerMaintenance();registerTabletop();});
 const enabled=()=>game.ready&&isObserver()&&setting("enabled")&&!tabletopMode();
@@ -136,9 +137,16 @@ Hooks.on("updateToken",(doc,change)=>{
  schedule();
 });
 function resetScene(){actionDirector.reset();recentShot=null;combatDirector.reset();explorationCache.clear();wideKey=null;clearTimeout(timer);timer=null;flight=null;sceneId=null;last=null;mode=null;partyId=null;}
-Hooks.on("canvasTearDown",()=>{if(game.ready&&isObserver())discardedCommand=setting("cameraCommand")?.issuedAt??null;resetScene();});
-Hooks.on("canvasReady",()=>{resetScene();schedule();});
+Hooks.on("canvasTearDown",()=>{if(!game.ready||!isObserver())return;discardedCommand=setting("cameraCommand")?.issuedAt??null;resetScene();});
+Hooks.on("canvasReady",()=>{if(!isObserver())return;resetScene();schedule();});
 for(const event of ["createToken","deleteToken","updateCombat","createCombat","deleteCombat","createCombatant","updateCombatant","deleteCombatant","sightRefresh","updateSetting","targetToken","combatTurnChange","userConnected"])Hooks.on(event,schedule);
-Hooks.once("ready",()=>{refreshObserverChoices();schedule();setInterval(schedule,750);});
-for(const event of ["createUser","updateUser","deleteUser"])Hooks.on(event,refreshObserverChoices);
+function syncCameraRole(){
+ if(enabled()){
+  if(heartbeat===null)heartbeat=setInterval(schedule,750);
+  schedule();
+ }else if(heartbeat!==null){clearInterval(heartbeat);heartbeat=null;resetScene();}
+}
+Hooks.once("ready",()=>{if(game.user?.isGM)refreshObserverChoices();syncCameraRole();});
+Hooks.on("updateSetting",doc=>{if(doc?.key===ID+".observerId"||doc?.key===ID+".enabled"||doc?.key===ID+".observerMode")syncCameraRole();});
+for(const event of ["createUser","updateUser","deleteUser"])Hooks.on(event,()=>{if(game.user?.isGM)refreshObserverChoices();});
 window.addEventListener("resize",schedule);
