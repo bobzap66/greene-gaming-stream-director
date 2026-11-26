@@ -6,7 +6,7 @@ import {pixels} from "./layout/geometry.js";
 import {safeTarget,chooseExploration,sceneCombatTargets} from "./camera/director.js";
 import {registerGMDirector} from "./gm/panel.js";
 import {effectiveCommand,manualTarget,transitionDuration} from "./camera/manual.js";
-let timer,flight=null,last=null,mode=null,partyId=null,sceneId=null;
+let timer,flight=null,last=null,mode=null,partyId=null,sceneId=null,discardedCommand=null;
 Hooks.once("init",()=>{registerSettings();registerEditor();registerLayout();registerGMDirector();});
 const enabled=()=>game.ready&&isObserver()&&setting("enabled");
 const visible=t=>t&&t.actor&&t.isVisible&&!t.document.hidden;
@@ -25,7 +25,8 @@ async function update(){
  let points;
  if(active)points=combat.map(point);
  else points=chooseExploration(individuals,parties,mode,partyId,setting("groupDistance")*grid,last);
- const command=effectiveCommand(setting("cameraCommand"),sceneId,game.user.id);
+ const rawCommand=setting("cameraCommand");
+ const command=rawCommand?.issuedAt===discardedCommand?{mode:"auto"}:effectiveCommand(rawCommand,sceneId,game.user.id);
  if(command.mode==="hold")return;
  const layout=setting("layoutEnabled");
  const rect=pixels(layout?region("camera"):{x:14,y:10,w:72,h:80},innerWidth,innerHeight);
@@ -61,7 +62,7 @@ Hooks.on("updateToken",(doc,change)=>{
  schedule();
 });
 function resetScene(){clearTimeout(timer);timer=null;flight=null;sceneId=null;last=null;mode=null;partyId=null;}
-Hooks.on("canvasTearDown",resetScene);
+Hooks.on("canvasTearDown",()=>{if(game.ready&&isObserver())discardedCommand=setting("cameraCommand")?.issuedAt??null;resetScene();});
 Hooks.on("canvasReady",()=>{resetScene();schedule();});
 for(const event of ["createToken","deleteToken","updateCombat","createCombat","deleteCombat","createCombatant","updateCombatant","deleteCombatant","sightRefresh","updateSetting"])Hooks.on(event,schedule);
 Hooks.once("ready",()=>{refreshObserverChoices();schedule();setInterval(schedule,750);});
