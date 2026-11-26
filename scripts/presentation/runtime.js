@@ -3,6 +3,7 @@ import {maintenanceActive} from "./maintenance.js";
 import {hideRules,presentationCSS,combatRows,contentKind,openJournalApplications} from "./policy.js";
 const showChat=()=>setting("observerMode")==="tabletop"?setting("tabletopShowChat"):setting("presentationChat");
 const showCombat=()=>setting("observerMode")==="tabletop"?setting("tabletopShowCombat"):setting("presentationCombat");
+let heartbeat=null;
 let style,queued=false,busy=false,ownedCombat=null,chatActivated=false;
 const timers=new Map();
 const closing=new Set();
@@ -43,6 +44,7 @@ async function reconcile(){
   if(on&&setting("presentationDismissJournal")){
    for(const app of openJournalApplications(foundry.applications.instances))dismiss(app);
   }
+  if(!on&&!style&&!ownedCombat&&!timers.size)return;
   if(!style){style=document.createElement("style");style.id="ggsd-presentation";document.head.append(style);}
   const css=presentationCSS({enabled:on,...(on?Object.fromEntries(Object.keys(hideRules).map(k=>[k,setting(k)])): {}),presentationChat:on&&showChat()})+(on&&setting("observerMode")==="tabletop"&&!showChat()?"\n#sidebar, #sidebar-content, #sidebar-tabs{display:none!important;}":"");
   if(style.textContent!==css)style.textContent=css;
@@ -69,10 +71,18 @@ async function reconcile(){
   }
  }catch(e){console.warn(ID,"Broadcast presentation",e);}finally{busy=false;}
 }
-function schedule(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;reconcile();});}
+function schedule(){if(!game.ready||(!enabled()&&!ownedCombat&&!timers.size&&!style?.textContent)||queued)return;queued=true;requestAnimationFrame(()=>{queued=false;reconcile();});}
 export function registerPresentation(){
  for(const event of ["renderApplication","renderApplicationV2"])Hooks.on(event,app=>{dismiss(app);if(enabled())schedule();});
  for(const event of ["closeApplication","closeApplicationV2"])Hooks.on(event,clearApp);
  for(const event of ["updateCombat","createCombat","deleteCombat","updateCombatant","createCombatant","deleteCombatant","combatTurnChange","canvasReady","updateSetting","ggsdMaintenanceChanged"])Hooks.on(event,schedule);
- Hooks.once("ready",()=>{schedule();setInterval(()=>{if(enabled()||ownedCombat)schedule();},1000);});
+ function syncPresentationRole(){
+  if(enabled()){
+   if(heartbeat===null)heartbeat=setInterval(schedule,1000);
+  }else if(heartbeat!==null){clearInterval(heartbeat);heartbeat=null;}
+  schedule();
+ }
+ Hooks.once("ready",syncPresentationRole);
+ Hooks.on("updateSetting",syncPresentationRole);
+ Hooks.on("ggsdMaintenanceChanged",syncPresentationRole);
 }
