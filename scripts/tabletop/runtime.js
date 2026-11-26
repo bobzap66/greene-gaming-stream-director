@@ -70,7 +70,7 @@ function reconcile(){
  }
  lastScene=scene;lastCommand=command.issuedAt;lastScale=s;
 }
-function schedule(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;try{reconcile();}catch(e){console.error(ID,e);warnOnce("Tabletop: positioning failed; check the console.");}});}
+function schedule(){if(!game.ready||(!active()&&lastScene===null)||queued)return;queued=true;requestAnimationFrame(()=>{queued=false;try{reconcile();}catch(e){console.error(ID,e);warnOnce("Tabletop: positioning failed; check the console.");}});}
 function openCalibration(){
  if(!active()||calibrating)return;
  calibrating=true;
@@ -93,8 +93,8 @@ export function registerTabletop(){
  game.settings.register(ID,"tabletopCalibration",{scope:"client",config:false,type:Object,default:{}});
  game.keybindings.register(ID,"tabletop-calibrate",{name:"Calibrate tabletop display",editable:[{key:"KeyC",modifiers:["Alt","Shift"]}],restricted:false,onDown:()=>{if(!active())return false;openCalibration();return true;}});
  Hooks.once("ready",()=>{if(isObserver()&&tabletopMode())install();schedule();});
- Hooks.on("canvasReady",()=>{lastScene=null;schedule();});
- Hooks.on("canvasTearDown",()=>{lastScene=null;lastCommand=null;lastScale=null;});
+ Hooks.on("canvasReady",()=>{if(!active())return;lastScene=null;schedule();});
+ Hooks.on("canvasTearDown",()=>{if(!active()&&lastScene===null)return;lastScene=null;lastCommand=null;lastScale=null;});
  Hooks.on("updateSetting",schedule);
  window.addEventListener("resize",schedule);
 }
