@@ -1,9 +1,9 @@
-import {setting,isObserver,defaultRegions} from "../settings.js";
+import {setting,modeSetting,isObserver,defaultRegions,tabletopRegions} from "../settings.js";
 import {maintenanceActive} from "../presentation/maintenance.js";
 import {normalizeRegion,pixels} from "./geometry.js";
 let style,observer,queued=false;
 const managed=new Map();
-export function region(key){return normalizeRegion(setting("regions")?.[key],defaultRegions[key]);}
+export function region(key){const fallback=setting("observerMode")==="tabletop"?tabletopRegions:defaultRegions;return normalizeRegion(modeSetting("regions")?.[key],fallback[key]);}
 function apply(el,values){
  if(!managed.has(el))managed.set(el,new Map());
  const saved=managed.get(el);
@@ -16,12 +16,12 @@ function restore(el){for(const [k,[v,p]] of managed.get(el)??[])v?el.style.setPr
 const rule=(selector,r,extra="")=>selector+"{position:fixed!important;left:"+r.x+"vw!important;top:"+r.y+"vh!important;width:"+r.w+"vw!important;right:auto!important;bottom:auto!important;transform:none!important;min-width:0!important;min-height:0!important;box-sizing:border-box!important;"+extra+"}";
 export function applyLayout(){
  if(!game.ready)return;
- const enabled=isObserver()&&!maintenanceActive()&&setting("layoutEnabled");
+ const enabled=isObserver()&&!maintenanceActive()&&modeSetting("layoutEnabled");
  const used=new Set();
  let css="";
  if(enabled){
- if(setting("combatEnabled")){const r=region("combat");css+=rule("body #combat-popout",r,"height:auto!important;max-height:"+r.h+"vh!important;overflow:auto!important;");}
- if(setting("artEnabled")){
+ if(modeSetting("combatEnabled")&&(setting("observerMode")!=="tabletop"||setting("tabletopShowCombat"))){const r=region("combat");css+=rule("body #combat-popout",r,"height:auto!important;max-height:"+r.h+"vh!important;overflow:auto!important;");}
+ if(modeSetting("artEnabled")){
  const r=region("art");
  css+=rule("body .application.journal-sheet",r,"height:"+r.h+"vh!important;max-width:none!important;max-height:none!important;");
  const b=pixels(r,innerWidth,innerHeight);
@@ -31,16 +31,16 @@ export function applyLayout(){
  apply(el,{position:"fixed",left:(b.x+(b.width-w*s)/2)+"px",top:(b.y+(b.height-h*s)/2)+"px",right:"auto",bottom:"auto","transform-origin":"top left",transform:"scale("+s+")"});
  }
  }
- if(setting("chatEnabled")&&(setting("observerMode")!=="tabletop"||setting("tabletopShowChat"))){
+ if(modeSetting("chatEnabled")&&(setting("observerMode")!=="tabletop"||setting("tabletopShowChat"))){
  const sidebar=document.querySelector("#sidebar-content"),chat=document.querySelector("#chat"),parent=document.querySelector("#ui-right");
- if(sidebar&&chat&&parent&&(!setting("presentationEnabled")?ui.chat?.active!==false:true)){
+ if(sidebar&&chat&&parent&&(!modeSetting("presentationEnabled")?ui.chat?.active!==false:true)){
  const r=pixels(region("chat"),innerWidth,innerHeight),b=parent.getBoundingClientRect(),transform=getComputedStyle(parent).transform;
  const m=new DOMMatrix(transform==="none"?undefined:transform),sx=m.a||1,sy=m.d||1;
  const origin=transform==="none"?{left:0,top:0}:b;
  used.add(sidebar);used.add(chat);
  apply(sidebar,{position:"fixed",left:(r.x-origin.left)/sx+"px",top:(r.y-origin.top)/sy+"px",width:r.width/sx+"px",height:r.height/sy+"px","max-width":"none","max-height":"none","min-width":"0","min-height":"0",right:"auto",bottom:"auto",overflow:"hidden",transform:"none"});
  apply(chat,{position:"relative",inset:"auto",width:"100%",height:"100%","max-width":"100%","max-height":"100%","min-width":"0","min-height":"0"});
- css+="#chat .message-content{font-size:"+setting("chatScale")+"%!important;}";
+ css+="#chat .message-content{font-size:"+modeSetting("chatScale")+"%!important;}";
  }
  }
  }
@@ -53,7 +53,7 @@ export function registerLayout(){
  for(const event of ["renderApplication","renderApplicationV2","renderChatLog","updateSetting","canvasReady","ggsdMaintenanceChanged","renderSidebarTab"])Hooks.on(event,schedule);
  function syncObserver(){
   if(!game.ready)return;
-  const on=isObserver()&&setting("layoutEnabled")&&!maintenanceActive();
+  const on=isObserver()&&modeSetting("layoutEnabled")&&!maintenanceActive();
   if(on&&!observer){observer=new MutationObserver(schedule);observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["style","class"]});}
   else if(!on&&observer){observer.disconnect();observer=null;}
   schedule();
