@@ -3,6 +3,7 @@ export const hideRules={
  presentationNavigation:"#navigation, #scene-navigation",
  presentationControls:"#controls, #scene-controls",
  presentationHotbar:"#hotbar",
+ presentationPF2eHUD:"#pf2e-hud-persistent > :not(#hotbar)",
  presentationPlayers:"#players",
  presentationPause:"#pause, #game-pause",
  presentationChatInput:"#chat-form, #chat-controls, #chat-message, #chat .chat-form, #chat .chat-controls"
