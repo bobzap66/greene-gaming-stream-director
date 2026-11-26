@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {presentationCSS,combatRows,contentKind,openJournalApplications} from "../scripts/presentation/policy.js";
+import {presentationCSS,combatRows,contentKind,openJournalApplications,applicationElement} from "../scripts/presentation/policy.js";
 test("disabled presentation emits no CSS",()=>assert.equal(presentationCSS({enabled:false,presentationPause:true}),""));
 test("selected interface elements hidden without hiding canvas or entire sidebar",()=>{
  const css=presentationCSS({enabled:true,presentationChat:true,presentationPause:true,presentationHotbar:true});
@@ -40,4 +40,15 @@ test("registry finds connected parent journal even before rendered flag is true"
  const detached={element:{...parent.element,isConnected:false},close(){}};
  assert.deepEqual(openJournalApplications(new Map([[1,parent],[2,page],[3,art],[4,detached]])),[parent]);
  assert.deepEqual(openJournalApplications(undefined),[]);
+});
+
+test("native journal form is not unwrapped to its indexed button",()=>{
+ const button={tagName:"BUTTON",matches:()=>false};
+ const form={tagName:"FORM",0:button,isConnected:true,matches:s=>s.split(", ").some(cls=>[".application",".journal-sheet",".journal-entry"].includes(cls))};
+ const app={element:form,close(){}};
+ assert.equal(applicationElement(app),form);
+ assert.equal(contentKind(applicationElement(app)),"journal");
+ assert.deepEqual(openJournalApplications(new Map([[1,app]])),[app]);
+ assert.equal(applicationElement({element:[form]}),form);
+ assert.equal(applicationElement({element:null}),null);
 });
