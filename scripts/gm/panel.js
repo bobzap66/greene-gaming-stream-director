@@ -1,3 +1,4 @@
+import {registerViewport,toggleViewport} from "./viewport.js";
 import {ID,setting} from "../settings.js";
 import {MODES,effectiveCommand,transitionDuration} from "../camera/manual.js";
 import {sceneBookmarks,putBookmark,removeBookmark,bookmarkCommand} from "../camera/bookmarks.js";
@@ -140,6 +141,7 @@ function refreshBookmarks(root,command){
  section.append(rows);
 }
 export function registerGMDirector(){
+ registerViewport(async position=>{if(setting("observerMode")!=="tabletop")return;stopMirror();stopPick();await publish("focus",{...position,scale:view().scale,speed:"cut"});});
  const {ApplicationV2}=foundry.applications.api;
  class DirectorPanel extends ApplicationV2{
   static DEFAULT_OPTIONS={id:"ggsd-director",window:{title:"Stream Director",resizable:true},position:{width:480,height:560}};
@@ -169,6 +171,7 @@ export function registerGMDirector(){
     if(!existing)existing=await Macro.create({name:"Open Stream Director",type:"script",img:"icons/svg/video.svg",command:directorMacroCommand});
     if(existing)ui.notifications.info("Open Stream Director macro is ready. Drag it from the Macros directory onto your hotbar.");
    });result.append(macro);
+   const viewport=document.createElement("button");viewport.type="button";viewport.textContent="Toggle tabletop viewport (Alt+Shift+V)";viewport.onclick=()=>{if(!toggleViewport())ui.notifications.warn("Enable Tabletop mode and spectator camera first.");};result.append(viewport);
    const bookmarks=document.createElement("section");bookmarks.dataset.bookmarks="";Object.assign(bookmarks.style,{display:"grid",gap:"5px"});result.append(bookmarks);
    const note=document.createElement("small");note.textContent="Wide: explored area. Full: entire map. Follow: select one token. Focus: click the map. Scene changes reset Auto.";result.append(note);
    requestAnimationFrame(refreshPanel);
