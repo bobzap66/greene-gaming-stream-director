@@ -24,6 +24,9 @@ All shortcuts below are defaults and can be customized in Foundry's Configure Co
 | `Alt+Shift+5` | Focus Point — then click a location on the canvas. |
 | `Alt+Shift+6` | Mirror GM — follow the GM's camera position and zoom. |
 | `Alt+Shift+7` | Full Scene — frame the entire map. |
+| `Alt+Shift+S` | Share focused artwork or a single visible journal page with the configured recipients. |
+| `Alt+Shift+A` | Share selected token actor artwork. |
+| `Alt+Shift+X` | Close artwork and journal windows on the designated observer only. |
 | `Escape` | Cancel a pending Focus Point selection (fixed, not a configurable keybinding). |
 
 ### Observer controls
@@ -36,6 +39,12 @@ All shortcuts below are defaults and can be customized in Foundry's Configure Co
 The maintenance shortcut works on the designated observer when presentation or layout is enabled. Camera direction continues running, world settings are unchanged, and refreshing the observer exits maintenance mode. Use it to access Game Settings without asking the GM to disable broadcast presentation.
 
 **Hotbar alternative:** Click **Create director hotbar macro** in the GM Director panel, then drag **Open Stream Director** from the Macros directory to your preferred hotbar slot.
+
+## v0.4.6 — Independent mode settings and sharing
+
+Main settings retain observer, mode and camera enable switches. GM-only category menus organize camera, combat, Broadcast presentation, Broadcast layout, Tabletop, bookmarks and sharing. Existing Broadcast values and regions remain unchanged; tabletop presentation copies previously saved Broadcast presentation values once on GM login, preserving existing tabletop chat/combat toggles. Tabletop layout is off by default; enable it and optionally position art/journals, chat and tracker using its separate editor. The tabletop map does not use layout regions for framing. Calibration remains local and unchanged.
+
+Sharing shortcuts use native Foundry v14 APIs. Sharing defaults to the designated connected observer; select All connected players in Sharing settings to broaden recipients. Focus a single journal page (not multiple visible pages) or an image popout. Explicit sharing displays the selected page even without normal observer permission, without editing ownership. Alt+Shift+X closes matching windows only on the designated observer, including locally opened windows, regardless of automatic dismissal preferences. It does not close windows on regular players. No recurring player-side work added. Live testing required.
 
 ## v0.4.5.3 — Native form element hotfix
 
