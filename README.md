@@ -8,6 +8,12 @@ Manifest: https://github.com/bobzap66/greene-gaming-stream-director/releases/lat
 
 Enable the module in your world, select your observer account, disable Monk's Screen, Party Screen and Vision tracking, then enable the spectator camera and reload clients. Give the observer Observer access to individual party actors and the Party actor where applicable. No actor permissions are modified by this module.
 
+## v0.4.4 — Standalone broadcast presentation
+
+Enable Broadcast Presentation in module settings after disabling Monk's Common Display interface management. The feature is off by default and runs only for the designated non-GM observer. Separate switches hide navigation, canvas controls, hotbar, players, pause indicator and chat input. The native chat tab is activated and its navigation controls hidden; existing layout settings still position it. The native combat tracker is popped out for active same-scene combat and limited to three already-rendered combatants by default (1–20); module-opened tracker closes when combat ends. Artwork and journal windows on the observer auto-close after ten seconds by default (2–60), with independent switches. Dismissal applies to matching windows opened locally as well as GM-shared ones; it does not close GM windows or modify permissions. Native chat privacy and combat visibility are retained. No director panel controls were added.
+
+Foundry v14 DOM selectors, native popout rendering, journal/image render hooks and integration with layout require live PF2e/SF2e testing. Disable presentation if needed to recover the normal interface. This is not a replacement for Monk's non-broadcast features.
+
 ## v0.4.3.1 — Temporary bookmark recall
 
 Bookmarks now restore the preceding camera mode by default after a ten-second hold plus the configured transition duration. Configure 2–60 seconds or enable Hold bookmarks indefinitely. Recalling another bookmark restarts the hold while retaining the original return mode. Manual commands and scene changes cancel pending returns. Mirror resumes live tracking; unavailable followed tokens fall back to Auto. Timing is managed by the recalling GM client and is approximate, not an observer animation acknowledgment. Settings apply on subsequent recalls.
