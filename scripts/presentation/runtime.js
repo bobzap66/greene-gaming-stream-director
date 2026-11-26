@@ -1,28 +1,28 @@
-import {ID,setting,isObserver} from "../settings.js";
+import {ID,setting,modeSetting,isObserver} from "../settings.js";
 import {maintenanceActive} from "./maintenance.js";
 import {hideRules,presentationCSS,combatRows,contentKind,openJournalApplications,applicationElement} from "./policy.js";
-const showChat=()=>setting("observerMode")==="tabletop"?setting("tabletopShowChat"):setting("presentationChat");
-const showCombat=()=>setting("observerMode")==="tabletop"?setting("tabletopShowCombat"):setting("presentationCombat");
+const showChat=()=>setting("observerMode")==="tabletop"?setting("tabletopShowChat"):modeSetting("presentationChat");
+const showCombat=()=>setting("observerMode")==="tabletop"?setting("tabletopShowCombat"):modeSetting("presentationCombat");
 let heartbeat=null;
 let style,queued=false,busy=false,ownedCombat=null,chatActivated=false;
 const timers=new Map();
 const closing=new Set();
-const enabled=()=>game.ready&&isObserver()&&!maintenanceActive()&&setting("presentationEnabled");
+const enabled=()=>game.ready&&isObserver()&&!maintenanceActive()&&modeSetting("presentationEnabled");
 function clearTimers(){for(const timer of timers.values())clearTimeout(timer);timers.clear();}
 function dismiss(app){
  if(!enabled()||!app||typeof app.close!=="function"||closing.has(app))return;
  const el=applicationElement(app);
  const kind=contentKind(el);
  if(kind==="journal"?el.isConnected!==true:!app.rendered)return;
- if(!kind||!setting(kind==="art"?"presentationDismissArt":"presentationDismissJournal"))return;
+ if(!kind||!modeSetting(kind==="art"?"presentationDismissArt":"presentationDismissJournal"))return;
  if(timers.has(app))return;
  timers.set(app,setTimeout(()=>{
   timers.delete(app);
   const current=applicationElement(app);
-  if(!enabled()||contentKind(current)!==kind||!(kind==="journal"?current.isConnected:app.rendered)||!setting(kind==="art"?"presentationDismissArt":"presentationDismissJournal"))return;
+  if(!enabled()||contentKind(current)!==kind||!(kind==="journal"?current.isConnected:app.rendered)||!modeSetting(kind==="art"?"presentationDismissArt":"presentationDismissJournal"))return;
   closing.add(app);
   Promise.resolve().then(()=>app.close()).catch(e=>console.warn(ID,"Automatic "+kind+" dismissal failed",e)).finally(()=>closing.delete(app));
- },setting("presentationDismissDelay")*1000));
+ },modeSetting("presentationDismissDelay")*1000));
 }
 function clearApp(app){if(timers.has(app)){clearTimeout(timers.get(app));timers.delete(app);}}
 function activeCombat(){
@@ -34,19 +34,19 @@ function trimCombat(app){
  if(!el?.querySelectorAll)return;
  const rows=[...el.querySelectorAll(".combatant[data-combatant-id], li.combatant")];
  const active=rows.findIndex(row=>row.classList.contains("active"));
- const keep=new Set(combatRows(rows.length,active,setting("presentationCombatLimit")));
+ const keep=new Set(combatRows(rows.length,active,modeSetting("presentationCombatLimit")));
  rows.forEach((row,i)=>row.toggleAttribute("data-ggsd-combat-hidden",!keep.has(i)));
 }
 async function reconcile(){
  if(busy){schedule();return;}busy=true;
  try{
   const on=enabled();
-  if(on&&setting("presentationDismissJournal")){
+  if(on&&modeSetting("presentationDismissJournal")){
    for(const app of openJournalApplications(foundry.applications.instances))dismiss(app);
   }
   if(!on&&!style&&!ownedCombat&&!timers.size)return;
   if(!style){style=document.createElement("style");style.id="ggsd-presentation";document.head.append(style);}
-  const css=presentationCSS({enabled:on,...(on?Object.fromEntries(Object.keys(hideRules).map(k=>[k,setting(k)])): {}),presentationChat:on&&showChat()})+(on&&setting("observerMode")==="tabletop"&&!showChat()?"\n#sidebar, #sidebar-content, #sidebar-tabs{display:none!important;}":"");
+  const css=presentationCSS({enabled:on,...(on?Object.fromEntries(Object.keys(hideRules).map(k=>[k,modeSetting(k)])): {}),presentationChat:on&&showChat()})+(on&&setting("observerMode")==="tabletop"&&!showChat()?"\n#sidebar, #sidebar-content, #sidebar-tabs{display:none!important;}":"");
   if(style.textContent!==css)style.textContent=css;
   if(!on){
    clearTimers();chatActivated=false;
@@ -76,7 +76,10 @@ export function registerPresentation(){
  for(const event of ["renderApplication","renderApplicationV2"])Hooks.on(event,app=>{dismiss(app);if(enabled())schedule();});
  for(const event of ["closeApplication","closeApplicationV2"])Hooks.on(event,clearApp);
  for(const event of ["updateCombat","createCombat","deleteCombat","updateCombatant","createCombatant","deleteCombatant","combatTurnChange","canvasReady","updateSetting","ggsdMaintenanceChanged"])Hooks.on(event,schedule);
+ let priorMode;
  function syncPresentationRole(){
+  if(!game.ready)return;
+  const mode=setting("observerMode");if(priorMode!==undefined&&priorMode!==mode)clearTimers();priorMode=mode;
   if(enabled()){
    if(heartbeat===null)heartbeat=setInterval(schedule,1000);
   }else if(heartbeat!==null){clearInterval(heartbeat);heartbeat=null;}
