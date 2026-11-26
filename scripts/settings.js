@@ -20,6 +20,8 @@ export function registerSettings(){
  register("cinematicPadding",{name:"Cinematic combat context (grid squares)",hint:"Extra space on each side of the acting combatant and targets.",type:Number,default:2.5,range:{min:1,max:6,step:.5},requiresReload:false});
  register("wideMargin",{name:"Wide Shot exploration margin (%)",hint:"Extra space around explored bounds, as a percentage of their width and height.",type:Number,default:10,range:{min:0,max:60,step:5},requiresReload:false});
  register("layoutEnabled",{name:"Enable broadcast layout",hint:"Observer-only window and chat positioning.",type:Boolean,default:false});
+ register("bookmarkHold",{name:"Bookmark hold duration (seconds)",hint:"Return to the preceding camera mode after this hold plus the selected transition duration.",type:Number,default:10,range:{min:2,max:60,step:1},requiresReload:false});
+ register("bookmarkIndefinite",{name:"Hold bookmarks indefinitely",hint:"Disable automatic return for subsequently recalled bookmarks.",type:Boolean,default:false,requiresReload:false});
  register("cameraCommand",{name:"GM camera command",config:false,type:Object,default:{mode:"auto"},requiresReload:false});
  register("regions",{name:"Broadcast regions",config:false,type:Object,default:defaultRegions,requiresReload:false});
  for(const key of ["art","chat","combat"])register(key+"Enabled",{name:"Position "+key,type:Boolean,default:true});
