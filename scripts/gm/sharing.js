@@ -11,7 +11,9 @@ function recipients(){
  return [u.id];
 }
 async function shareFocused(){
- const app=foundry.applications.api.ApplicationV2.frontApp??ui.activeWindow;
+ const instances=Array.from(foundry.applications.instances.values());
+ const focused=document.activeElement?.closest(".application");
+ const app=instances.find(a=>applicationElement(a)===focused)??foundry.applications.api.ApplicationV2.frontApp??ui.activeWindow??instances.filter(a=>{const el=applicationElement(a);return el?.isConnected&&el.matches(".application")&&el.querySelector(".window-header");}).sort((a,b)=>(Number(getComputedStyle(applicationElement(b)).zIndex)||0)-(Number(getComputedStyle(applicationElement(a)).zIndex)||0))[0];
  const el=applicationElement(app);
  if(!el?.isConnected)throw Error("Focus an artwork or journal window first.");
  const users=recipients(),kind=contentKind(el);
@@ -21,8 +23,8 @@ async function shareFocused(){
  if(doc?.documentName==="JournalEntryPage")page=doc;
  else if(kind==="journal"&&typeof app.viewedPageDocuments==="function"){
   const pages=Array.from(app.viewedPageDocuments());
-  if(pages.length!==1)throw Error("Select a single journal page before sharing.");
-  page=pages[0];
+  page=pages.find(p=>p.id===app.pageId)??(pages.length===1?pages[0]:null);
+  if(!page)throw Error("Select a single journal page before sharing.");
  }
  if(page?.documentName!=="JournalEntryPage")throw Error("Focus a single journal page or artwork window.");
  await foundry.documents.collections.Journal.show(page,{force:true,users});
