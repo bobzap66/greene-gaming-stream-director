@@ -37,7 +37,7 @@ function choosePoint(){
  const stage=canvas.stage;
  ui.notifications.info("Click a location on the canvas to focus; Escape cancels.");
  const el=canvas.app?.canvas??canvas.app?.view;
- if(!el){ui.notifications.warn("Canvas unavailable.");return;}
+ if(!el?.addEventListener){ui.notifications.warn("Canvas unavailable.");return;}
  const click=e=>{
   e.preventDefault();e.stopImmediatePropagation();
   const bounds=el.getBoundingClientRect();
@@ -63,7 +63,7 @@ export async function selectMode(mode){
  await publish(mode);
 }
 function refreshPanel(){
- if(!panel?.rendered)return;
+ if(!panel?.rendered||!game.user?.isGM)return;
  const root=panel.element;
  const command=effectiveCommand(setting("cameraCommand"),canvas.scene?.id,setting("observerId"));
  const status=root.querySelector("[data-status]");
@@ -75,8 +75,8 @@ function refreshPanel(){
 export function registerGMDirector(){
  const {ApplicationV2}=foundry.applications.api;
  class DirectorPanel extends ApplicationV2{
-  static DEFAULT_OPTIONS={id:"ggsd-director",window:{title:"Stream Director",resizable:true},position:{width:330,height:"auto"}};
-  async _renderHTML(){return document.createElement("div");}
+  static DEFAULT_OPTIONS={id:"ggsd-director",window:{title:"Stream Director",resizable:true},position:{width:330,height:310}};
+  async _renderHTML(){panel=this;return document.createElement("div");}
   _replaceHTML(result,content){
    content.replaceChildren(result);Object.assign(result.style,{display:"grid",gap:"8px",padding:"4px"});
    const status=document.createElement("div");status.dataset.status="";result.append(status);
