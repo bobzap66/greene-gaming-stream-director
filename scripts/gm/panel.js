@@ -1,5 +1,6 @@
 import {ID,setting} from "../settings.js";
 import {MODES,effectiveCommand} from "../camera/manual.js";
+import {directorMacroCommand} from "../camera/hybrid.js";
 let panel, mirrorTimer, mirrorBusy=false, mirrorGeneration=0, commandQueue=Promise.resolve(), pickCleanup;
 const labels={auto:"Auto",hold:"Hold",wide:"Wide shot",follow:"Follow token",focus:"Focus point",mirror:"Mirror GM",full:"Full Scene"};
 const icons={auto:"fa-crosshairs",hold:"fa-pause",wide:"fa-expand",follow:"fa-person-walking",focus:"fa-location-dot",mirror:"fa-display",full:"fa-map"};
@@ -77,7 +78,7 @@ function refreshPanel(){
 export function registerGMDirector(){
  const {ApplicationV2}=foundry.applications.api;
  class DirectorPanel extends ApplicationV2{
-  static DEFAULT_OPTIONS={id:"ggsd-director",window:{title:"Stream Director",resizable:true},position:{width:400,height:350}};
+  static DEFAULT_OPTIONS={id:"ggsd-director",window:{title:"Stream Director",resizable:true},position:{width:400,height:390}};
   async _renderHTML(){panel=this;return document.createElement("div");}
   _replaceHTML(result,content){
    content.replaceChildren(result);Object.assign(result.style,{display:"grid",gap:"8px",padding:"4px"});
@@ -96,13 +97,20 @@ export function registerGMDirector(){
    select.value=speed;select.onchange=()=>{speed=select.value;};label.append(select);result.append(label);
    const combatLabel=document.createElement("label");combatLabel.textContent="Combat style ";
    const combatStyle=document.createElement("select");combatStyle.dataset.combatStyle="";
-   for(const [value,name] of [["tactical","Tactical"],["cinematic","Cinematic"]]){const opt=document.createElement("option");opt.value=value;opt.textContent=name;combatStyle.append(opt);}
+   for(const [value,name] of [["tactical","Tactical"],["cinematic","Cinematic"],["hybrid","Hybrid"]]){const opt=document.createElement("option");opt.value=value;opt.textContent=name;combatStyle.append(opt);}
    combatStyle.value=setting("combatStyle");combatStyle.onchange=safeAction(async()=>{if(game.user?.isGM)await game.settings.set(ID,"combatStyle",combatStyle.value);});combatLabel.append(combatStyle);result.append(combatLabel);
+   const macro=document.createElement("button");macro.type="button";macro.textContent="Create director hotbar macro";macro.onclick=safeAction(async()=>{
+    if(!game.user?.isGM)return;
+    let existing=game.macros.find(m=>m.type==="script"&&m.command===directorMacroCommand);
+    if(!existing)existing=await Macro.create({name:"Open Stream Director",type:"script",img:"icons/svg/video.svg",command:directorMacroCommand});
+    if(existing)ui.notifications.info("Open Stream Director macro is ready. Drag it from the Macros directory onto your hotbar.");
+   });result.append(macro);
    const note=document.createElement("small");note.textContent="Wide: explored area. Full: entire map. Follow: select one token. Focus: click the map. Scene changes reset Auto.";result.append(note);
    requestAnimationFrame(refreshPanel);
   }
  }
- function open(){if(!game.user?.isGM)return;panel??=new DirectorPanel();panel.render(true);}
+ function open(){if(!game.user?.isGM)return;panel??=new DirectorPanel();if(panel.rendered){panel.bringToFront();return panel;}panel.render(true);return panel;}
+ const module=game.modules.get(ID);if(module)module.api=Object.freeze({openDirector:open});
  game.settings.registerMenu(ID,"gmDirector",{name:"GM Camera Director",label:"Open camera director",hint:"Direct the designated stream observer only.",icon:"fas fa-video",type:DirectorPanel,restricted:true});
  const bindings={open:["KeyD",()=>{open();return true;}],auto:["Digit1",()=>{safeAction(()=>selectMode("auto"))();return true;}],hold:["Digit2",()=>{safeAction(()=>selectMode("hold"))();return true;}],wide:["Digit3",()=>{safeAction(()=>selectMode("wide"))();return true;}],follow:["Digit4",()=>{safeAction(()=>selectMode("follow"))();return true;}],focus:["Digit5",()=>{safeAction(()=>selectMode("focus"))();return true;}],mirror:["Digit6",()=>{safeAction(()=>selectMode("mirror"))();return true;}],full:["Digit7",()=>{safeAction(()=>selectMode("full"))();return true;}]};
  for(const [key,[code,action]] of Object.entries(bindings))game.keybindings.register(ID,"director-"+key,{name:"Stream Director: "+key,editable:[{key:code,modifiers:["Alt","Shift"]}],restricted:true,onDown:()=>game.user?.isGM?action():false});

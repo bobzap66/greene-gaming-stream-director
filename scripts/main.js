@@ -9,7 +9,9 @@ import {effectiveCommand,manualTarget,transitionDuration} from "./camera/manual.
 import {sampleExplored,unionVisible,createExplorationCache} from "./camera/explored.js";
 import {createCombatDirector,currentActorToken,eligibleTargetUsers} from "./camera/combat.js";
 import {publicAction,createActionDirector} from "./camera/action.js";
+import {combatStyleShot} from "./camera/hybrid.js";
 const actionDirector=createActionDirector();
+let previousStyle=null;
 const combatDirector=createCombatDirector();
 let recentShot=null;
 const explorationCache=createExplorationCache();
@@ -37,7 +39,9 @@ async function update(){
  const command=rawCommand?.issuedAt===discardedCommand?{mode:"auto"}:effectiveCommand(rawCommand,sceneId,game.user.id);
  if(command.mode!=="wide"){wideKey=null;explorationCache.clear();}
  let cinematic=false;
- if(command.mode==="auto"&&active&&setting("combatStyle")==="cinematic"){
+ const style=setting("combatStyle");
+ if(style!==previousStyle){combatDirector.reset();actionDirector.reset();recentShot=null;previousStyle=style;}
+ if(command.mode==="auto"&&active&&["cinematic","hybrid"].includes(style)){
   const encounter=game.combat;
   const acting=currentActorToken(encounter,sceneId,combat);
   const visiblePoints=tokens.map(point);
@@ -50,14 +54,14 @@ async function update(){
    turn:[encounter.round,encounter.turn,encounter.combatant?.id].join("|"),
    actorId:acting?.id,visiblePoints,combatPoints:points,userTargets,now:performance.now()
   });
-  points=shot.points;cinematic=shot.kind==="cinematic";
   const encounterKey=sceneId+"|"+encounter.id;
-  recentShot=cinematic?{encounter:encounterKey,actorId:acting?.id,ids:points.map(p=>p.id)}:null;
-  if(setting("actionAware")){
-   const actionPoints=actionDirector.select({encounter:encounterKey,now:performance.now(),visiblePoints});
-   // A hidden active combatant retains tactical fallback; establishing shot also wins.
-   if(cinematic&&actionPoints?.length){points=actionPoints;cinematic=true;}
-  }else actionDirector.reset();
+  const turnKey=[encounter.round,encounter.turn,encounter.combatant?.id].join("|");
+  recentShot=shot.kind==="cinematic"?{encounter:encounterKey,turn:turnKey,actorId:acting?.id,ids:shot.points.map(p=>p.id)}:null;
+  let actionPoints=null;
+  if(setting("actionAware"))actionPoints=actionDirector.select({encounter:encounterKey,now:performance.now(),visiblePoints});
+  else actionDirector.reset();
+  const selected=combatStyleShot(style,shot,points,actionPoints);
+  points=selected.points;cinematic=selected.kind==="cinematic";
  }else{combatDirector.reset();actionDirector.reset();recentShot=null;}
  if(command.mode==="hold")return;
  const layout=setting("layoutEnabled");
@@ -66,7 +70,7 @@ async function update(){
  const current={x:stage.pivot.x,y:stage.pivot.y,scale:stage.scale.x};
  const members=points.map(p=>p.id).sort().join(",");
  const center={x:stage.position.x,y:stage.position.y};
- const key=[sceneId,active,cinematic,members,innerWidth,innerHeight,JSON.stringify(rect),command.mode,command.tokenId,command.issuedAt].join("|");
+ const key=[sceneId,active,style,cinematic,members,setting("cinematicPadding"),innerWidth,innerHeight,JSON.stringify(rect),command.mode,command.tokenId,command.issuedAt].join("|");
  const options={margin:layout?setting("frameMargin")/100:0,padding:cinematic?setting("cinematicPadding")*grid:layout?0:setting("padding")*grid,maxScale:setting("maxZoom"),force:key!==last?.key};
  const autoFrame=()=>safeTarget(points,rect,center,current,options);
  let exploredRect=null;
@@ -99,7 +103,7 @@ async function update(){
  }finally{clearTimeout(watchdog);if(flight===run){flight=null;schedule();}}
 }
 Hooks.on("createChatMessage",message=>{
- if(!enabled()||!canvas.ready||setting("combatStyle")!=="cinematic"||!setting("actionAware"))return;
+ if(!enabled()||!canvas.ready||!["cinematic","hybrid"].includes(setting("combatStyle"))||!setting("actionAware"))return;
  const scene=canvas.scene?.id,encounter=game.combat;
  const raw=setting("cameraCommand");
  const command=raw?.issuedAt===discardedCommand?{mode:"auto"}:effectiveCommand(raw,scene,game.user.id);
@@ -111,7 +115,8 @@ Hooks.on("createChatMessage",message=>{
  const action=publicAction(message,scene,visibleIds,new Set(combat.map(t=>t.id)));
  if(!action)return;
  const encounterKey=scene+"|"+encounter.id;
- const fallbackIds=recentShot?.encounter===encounterKey&&recentShot.actorId===action.actorId?recentShot.ids.filter(id=>visibleIds.has(id)):[];
+ const turnKey=[encounter.round,encounter.turn,encounter.combatant?.id].join("|");
+ const fallbackIds=recentShot?.encounter===encounterKey&&recentShot.turn===turnKey&&recentShot.actorId===action.actorId?recentShot.ids.filter(id=>visibleIds.has(id)):[];
  actionDirector.record({encounter:encounterKey,action,now:performance.now(),holdMs:setting("actionHold"),fallbackIds});
  schedule();
 });
