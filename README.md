@@ -8,6 +8,14 @@ Manifest: https://github.com/bobzap66/greene-gaming-stream-director/releases/lat
 
 Enable the module in your world, select your observer account, disable Monk's Screen, Party Screen and Vision tracking, then enable the spectator camera and reload clients. Give the observer Observer access to individual party actors and the Party actor where applicable. No actor permissions are modified by this module.
 
+## v0.4.2 — Hybrid combat and director macro
+
+Select Hybrid in the GM Camera Director combat style menu. Auto holds the tactical encounter-wide composition during initiative changes, movement and targeting. An eligible public roll switches to cinematic action framing for the configured action hold, then returns to tactical. Follow-up rolls and reactions use the existing bounded action director. Target selection alone does not zoom in; turn-local targeting continues behind the scenes to provide fallback targets for public rolls. Establishing shots, hidden active combatants, manual overrides and observer visibility checks retain priority. Disabling action awareness makes Hybrid behave tactically.
+
+The existing Tactical and Cinematic styles remain available and the default is unchanged. Action hold and cinematic context settings are shared with Cinematic. Live testing is required; remote targeting remains an outstanding test.
+
+The GM panel includes a Create director hotbar macro button. It creates (or reuses) a world script macro named Open Stream Director; drag it from the Macros directory onto the hotbar. This avoids packaging a binary compendium and does not overwrite existing hotbar slots. The public GM-only module API is `game.modules.get("greene-gaming-stream-director")?.api?.openDirector()`. It opens the same panel or brings it forward if already rendered.
+
 ## v0.4.1 — Action-aware cinematic combat
 
 Cinematic Auto now optionally retains the visible speaker and structured visible targets of a new public combat roll for 3.2 seconds (adjustable 1–6 seconds). A follow-up roll from the same actor renews the hold, capped at ten seconds from the start of the action. A public roll from another visible combatant can redirect the shot, including an out-of-turn reaction or saving throw. Initiative and targeting continue updating behind the hold. On expiry the normal cinematic shot resumes. Hidden active combatants and the initial establishing shot retain tactical precedence.
