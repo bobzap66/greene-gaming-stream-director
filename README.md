@@ -1,12 +1,14 @@
 # Greene Gaming Stream Director
 
-Independent spectator camera for Foundry VTT v14. Designed for a dedicated non-GM observer captured in OBS. System-agnostic; Monk's Common Display is optional.
+Independent spectator camera for Foundry VTT v14. Designed for a dedicated non-GM observer captured in OBS. System-agnostic and standalone; no other modules are required.
 
 ## Install
 
 Manifest: https://github.com/bobzap66/greene-gaming-stream-director/releases/latest/download/module.json
 
-Enable the module in your world, select your observer account, disable Monk's Screen, Party Screen and Vision tracking, then enable the spectator camera and reload clients. Give the observer Observer access to individual party actors and the Party actor where applicable. No actor permissions are modified by this module.
+Enable the module in your world, select your observer account, then enable the spectator camera and reload clients. Give the observer Observer access to individual party actors and the Party actor where applicable. No actor permissions are modified by this module.
+
+Compatibility: avoid simultaneously using multiple modules to control the same observer camera or interface. Other modules can remain enabled for unrelated features.
 
 ## Keyboard shortcuts
 
@@ -40,6 +42,10 @@ The maintenance shortcut works on the designated observer when presentation or l
 
 **Hotbar alternative:** Click **Create director hotbar macro** in the GM Director panel, then drag **Open Stream Director** from the Macros directory to your preferred hotbar slot.
 
+## v0.4.6.1 — Standalone setup wording
+
+Remove outdated module-specific setup warnings from settings and documentation. Stream Director requires no external modules. General compatibility guidance remains in the README. No runtime behavior changes.
+
 ## v0.4.6 — Independent mode settings and sharing
 
 Main settings retain observer, mode and camera enable switches. GM-only category menus organize camera, combat, Broadcast presentation, Broadcast layout, Tabletop physical/layout, Tabletop presentation, bookmarks and sharing. Existing Broadcast values and regions remain unchanged; tabletop presentation copies previously saved Broadcast presentation values once on GM login, preserving existing tabletop chat/combat toggles. Tabletop layout is off by default; enable it and optionally position art/journals, chat and tracker using its separate editor. The tabletop map does not use layout regions for framing. Calibration remains local and unchanged.
@@ -64,7 +70,7 @@ Automatic journal dismissal now targets the parent journal application rather th
 
 ## v0.4.5 — Tabletop foundation (experimental)
 
-In main module settings select Tabletop observer mode, select your dedicated observer, enable spectator camera and optionally enable broadcast presentation. Disable Lock View and other camera controllers in the test world; reload both clients. On the television, press Alt+Shift+C and adjust the reference square against a ruler until it measures one inch. Save calibration locally in that browser. Alternatively enter the measured horizontal visible screen width (not diagonal) in world settings. The desired physical grid size defaults to one inch. Ruler calibration overrides screen width when display metrics match; changes to resolution or device pixel ratio require recalibration. Gridless scenes retain the current scale. Physical sizing is intended for square grids; other grid geometries are not validated.
+In main module settings select Tabletop observer mode, select your dedicated observer, enable spectator camera and optionally enable broadcast presentation. Reload both clients. On the television, press Alt+Shift+C and adjust the reference square against a ruler until it measures one inch. Save calibration locally in that browser. Alternatively enter the measured horizontal visible screen width (not diagonal) in world settings. The desired physical grid size defaults to one inch. Ruler calibration overrides screen width when display metrics match; changes to resolution or device pixel ratio require recalibration. Gridless scenes retain the current scale. Physical sizing is intended for square grids; other grid geometries are not validated.
 
 Tabletop mode intercepts normal pan and animatePan calls and disables broadcast auto-framing, including combat rolls. GM Focus Point and bookmarks move the display at fixed scale; Follow Token and Mirror GM center once, not continuously. Wide and Full center the map without fitting it. Auto and Hold leave the map stationary. Bookmarks do not automatically return in Tabletop mode. Deliberate moves are immediate cuts. Maintenance mode restores interface access without disabling camera locks. Chat and combat tracker are off by default in Tabletop when presentation is enabled. Broadcast mode retains existing behavior.
 
@@ -76,9 +82,9 @@ Broadcast presentation now hides the PF2e HUD persistent controls by default usi
 
 ## v0.4.4 — Standalone broadcast presentation
 
-Enable Broadcast Presentation in module settings after disabling Monk's Common Display interface management. The feature is off by default and runs only for the designated non-GM observer. Separate switches hide navigation, canvas controls, hotbar, players, pause indicator and chat input. The native chat tab is activated and its navigation controls hidden; existing layout settings still position it. The native combat tracker is popped out for active same-scene combat and limited to three already-rendered combatants by default (1–20); module-opened tracker closes when combat ends. Artwork and journal windows on the observer auto-close after ten seconds by default (2–60), with independent switches. Dismissal applies to matching windows opened locally as well as GM-shared ones; it does not close GM windows or modify permissions. Native chat privacy and combat visibility are retained. No director panel controls were added.
+Enable Broadcast Presentation in module settings. The feature is off by default and runs only for the designated non-GM observer. Separate switches hide navigation, canvas controls, hotbar, players, pause indicator and chat input. The native chat tab is activated and its navigation controls hidden; existing layout settings still position it. The native combat tracker is popped out for active same-scene combat and limited to three already-rendered combatants by default (1–20); module-opened tracker closes when combat ends. Artwork and journal windows on the observer auto-close after ten seconds by default (2–60), with independent switches. Dismissal applies to matching windows opened locally as well as GM-shared ones; it does not close GM windows or modify permissions. Native chat privacy and combat visibility are retained. No director panel controls were added.
 
-Foundry v14 DOM selectors, native popout rendering, journal/image render hooks and integration with layout require live PF2e/SF2e testing. Disable presentation if needed to recover the normal interface. This is not a replacement for Monk's non-broadcast features.
+Foundry v14 DOM selectors, native popout rendering, journal/image render hooks and integration with layout require live PF2e/SF2e testing. Disable presentation if needed to recover the normal interface. 
 
 ## v0.4.3.1 — Temporary bookmark recall
 
@@ -148,7 +154,7 @@ Reliability hotfix: combat framing is restricted to eligible combatants on the v
 
 ## v0.2.1
 
-Responsive safe-area framing reconciles the actual camera position, prioritizes fitting over the legacy minimum zoom, and uses a configurable proportional margin in layout mode. During exploration, moving a visible Party actor token selects it; moving a member of the largest individual cluster selects individual framing. On a fresh scene, individual characters take precedence if present. Active combat always takes precedence. Monk's Party Screen must be disabled.
+Responsive safe-area framing reconciles the actual camera position, prioritizes fitting over the legacy minimum zoom, and uses a configurable proportional margin in layout mode. During exploration, moving a visible Party actor token selects it; moving a member of the largest individual cluster selects individual framing. On a fresh scene, individual characters take precedence if present. Active combat always takes precedence.
 
 The layout editor adds encounter tracker and reserved OBS reference regions, numerical controls, and per-element positioning settings. Reserved regions are visual guides only: configure the camera and other regions to avoid them. Existing regions are retained. Chat positioning compensates for interface scale; artwork preserves aspect ratio; journals and encounter tracker use persistent CSS. Live Foundry/OBS regression testing of the integrated release is required.
 
@@ -158,7 +164,7 @@ Configurable camera grouping, padding, zoom and transition duration. Experimenta
 
 ## Recovery
 
-For temporary observer UI access, press Alt+Shift+U. For a full rollback, disable presentation, camera and layout settings and reload, or disable the module. Restore Monk's Party tracking if desired. The v0.1.2 release remains available as a tested camera-only fallback.
+For temporary observer UI access, press Alt+Shift+U. For a full rollback, disable presentation, camera and layout settings and reload, or disable the module. The v0.1.2 release remains available as a tested camera-only fallback.
 
 ## Development
 
