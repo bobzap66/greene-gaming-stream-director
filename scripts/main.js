@@ -8,7 +8,10 @@ import {registerGMDirector} from "./gm/panel.js";
 import {effectiveCommand,manualTarget,transitionDuration} from "./camera/manual.js";
 import {sampleExplored,unionVisible,createExplorationCache} from "./camera/explored.js";
 import {createCombatDirector,currentActorToken,eligibleTargetUsers} from "./camera/combat.js";
+import {publicAction,createActionDirector} from "./camera/action.js";
+const actionDirector=createActionDirector();
 const combatDirector=createCombatDirector();
+let recentShot=null;
 const explorationCache=createExplorationCache();
 let wideKey=null;
 let timer,flight=null,last=null,mode=null,partyId=null,sceneId=null,discardedCommand=null;
@@ -48,7 +51,14 @@ async function update(){
    actorId:acting?.id,visiblePoints,combatPoints:points,userTargets,now:performance.now()
   });
   points=shot.points;cinematic=shot.kind==="cinematic";
- }else combatDirector.reset();
+  const encounterKey=sceneId+"|"+encounter.id;
+  recentShot=cinematic?{encounter:encounterKey,actorId:acting?.id,ids:points.map(p=>p.id)}:null;
+  if(setting("actionAware")){
+   const actionPoints=actionDirector.select({encounter:encounterKey,now:performance.now(),visiblePoints});
+   // A hidden active combatant retains tactical fallback; establishing shot also wins.
+   if(cinematic&&actionPoints?.length){points=actionPoints;cinematic=true;}
+  }else actionDirector.reset();
+ }else{combatDirector.reset();actionDirector.reset();recentShot=null;}
  if(command.mode==="hold")return;
  const layout=setting("layoutEnabled");
  const rect=pixels(layout?region("camera"):{x:14,y:10,w:72,h:80},innerWidth,innerHeight);
@@ -88,6 +98,23 @@ async function update(){
   if(!completed&&flight===run)last=null;
  }finally{clearTimeout(watchdog);if(flight===run){flight=null;schedule();}}
 }
+Hooks.on("createChatMessage",message=>{
+ if(!enabled()||!canvas.ready||setting("combatStyle")!=="cinematic"||!setting("actionAware"))return;
+ const scene=canvas.scene?.id,encounter=game.combat;
+ const raw=setting("cameraCommand");
+ const command=raw?.issuedAt===discardedCommand?{mode:"auto"}:effectiveCommand(raw,scene,game.user.id);
+ if(command.mode!=="auto")return;
+ const combat=combatTargets();
+ if(!combat.length||!currentActorToken(encounter,scene,combat))return;
+ const visibleTokens=canvas.tokens.placeables.filter(visible);
+ const visibleIds=new Set(visibleTokens.map(t=>t.id));
+ const action=publicAction(message,scene,visibleIds,new Set(combat.map(t=>t.id)));
+ if(!action)return;
+ const encounterKey=scene+"|"+encounter.id;
+ const fallbackIds=recentShot?.encounter===encounterKey&&recentShot.actorId===action.actorId?recentShot.ids.filter(id=>visibleIds.has(id)):[];
+ actionDirector.record({encounter:encounterKey,action,now:performance.now(),holdMs:setting("actionHold"),fallbackIds});
+ schedule();
+});
 Hooks.on("updateToken",(doc,change)=>{
  if(!enabled()||!canvas.ready)return;
  if(doc.parent?.id===canvas.scene?.id&&("x" in change||"y" in change)&&!combatTargets().length){
@@ -100,7 +127,7 @@ Hooks.on("updateToken",(doc,change)=>{
  }
  schedule();
 });
-function resetScene(){combatDirector.reset();explorationCache.clear();wideKey=null;clearTimeout(timer);timer=null;flight=null;sceneId=null;last=null;mode=null;partyId=null;}
+function resetScene(){actionDirector.reset();recentShot=null;combatDirector.reset();explorationCache.clear();wideKey=null;clearTimeout(timer);timer=null;flight=null;sceneId=null;last=null;mode=null;partyId=null;}
 Hooks.on("canvasTearDown",()=>{if(game.ready&&isObserver())discardedCommand=setting("cameraCommand")?.issuedAt??null;resetScene();});
 Hooks.on("canvasReady",()=>{resetScene();schedule();});
 for(const event of ["createToken","deleteToken","updateCombat","createCombat","deleteCombat","createCombatant","updateCombatant","deleteCombatant","sightRefresh","updateSetting","targetToken","combatTurnChange","userConnected"])Hooks.on(event,schedule);

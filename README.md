@@ -8,6 +8,14 @@ Manifest: https://github.com/bobzap66/greene-gaming-stream-director/releases/lat
 
 Enable the module in your world, select your observer account, disable Monk's Screen, Party Screen and Vision tracking, then enable the spectator camera and reload clients. Give the observer Observer access to individual party actors and the Party actor where applicable. No actor permissions are modified by this module.
 
+## v0.4.1 — Action-aware cinematic combat
+
+Cinematic Auto now optionally retains the visible speaker and structured visible targets of a new public combat roll for 3.2 seconds (adjustable 1–6 seconds). A follow-up roll from the same actor renews the hold, capped at ten seconds from the start of the action. A public roll from another visible combatant can redirect the shot, including an out-of-turn reaction or saving throw. Initiative and targeting continue updating behind the hold. On expiry the normal cinematic shot resumes. Hidden active combatants and the initial establishing shot retain tactical precedence.
+
+Only newly created, public, observer-readable roll messages with an explicit same-scene visible combatant speaker are eligible. Private, blind, whispered, off-scene and hidden-speaker rolls are ignored. Structured PF2e/SF2e token UUID targets are used when available, otherwise the existing same-actor cinematic composition is retained; no HTML parsing, roll outcomes, private data, or inferred target locations are used. A generic public roll with an explicit combatant speaker can also trigger a hold. Non-roll spell/action cards and actual dice/animation completion are not detected in this release.
+
+Action-aware cinematic combat can be disabled independently in module settings. Tactical and manual modes are unaffected; scene changes and combat ending clear the hold. Live testing of message metadata and target resolution in both systems is required. Remote player targeting from v0.4.0 remains untested.
+
 ## v0.4.0 — Cinematic combat
 
 In the GM Camera Director (Alt+Shift+D), choose Combat style: Cinematic. Tactical remains the default and preserves the existing encounter-wide framing. Cinematic applies only in Auto mode and only to an active encounter on the observer's scene.
