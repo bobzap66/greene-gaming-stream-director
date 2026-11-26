@@ -1,4 +1,5 @@
 import {setting,isObserver,defaultRegions} from "../settings.js";
+import {maintenanceActive} from "../presentation/maintenance.js";
 import {normalizeRegion,pixels} from "./geometry.js";
 let style,observer,queued=false;
 const managed=new Map();
@@ -15,7 +16,7 @@ function restore(el){for(const [k,[v,p]] of managed.get(el)??[])v?el.style.setPr
 const rule=(selector,r,extra="")=>selector+"{position:fixed!important;left:"+r.x+"vw!important;top:"+r.y+"vh!important;width:"+r.w+"vw!important;right:auto!important;bottom:auto!important;transform:none!important;min-width:0!important;min-height:0!important;box-sizing:border-box!important;"+extra+"}";
 export function applyLayout(){
  if(!game.ready)return;
- const enabled=isObserver()&&setting("layoutEnabled");
+ const enabled=isObserver()&&!maintenanceActive()&&setting("layoutEnabled");
  const used=new Set();
  let css="";
  if(enabled){
@@ -32,7 +33,7 @@ export function applyLayout(){
  }
  if(setting("chatEnabled")){
  const sidebar=document.querySelector("#sidebar-content"),chat=document.querySelector("#chat"),parent=document.querySelector("#ui-right");
- if(sidebar&&chat&&parent){
+ if(sidebar&&chat&&parent&&(!setting("presentationEnabled")?ui.chat?.active!==false:true)){
  const r=pixels(region("chat"),innerWidth,innerHeight),b=parent.getBoundingClientRect(),transform=getComputedStyle(parent).transform;
  const m=new DOMMatrix(transform==="none"?undefined:transform),sx=m.a||1,sy=m.d||1;
  const origin=transform==="none"?{left:0,top:0}:b;
@@ -49,7 +50,7 @@ export function applyLayout(){
 }
 function schedule(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;applyLayout();});}
 export function registerLayout(){
- for(const event of ["renderApplication","renderApplicationV2","renderChatLog","updateSetting","canvasReady"])Hooks.on(event,schedule);
+ for(const event of ["renderApplication","renderApplicationV2","renderChatLog","updateSetting","canvasReady","ggsdMaintenanceChanged","renderSidebarTab"])Hooks.on(event,schedule);
  Hooks.once("ready",()=>{schedule();observer=new MutationObserver(schedule);observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["style","class"]});});
  window.addEventListener("resize",schedule);
 }
