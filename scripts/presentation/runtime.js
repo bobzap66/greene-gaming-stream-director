@@ -8,14 +8,14 @@ const timers=new Map();
 const enabled=()=>game.ready&&isObserver()&&!maintenanceActive()&&setting("presentationEnabled");
 function clearTimers(){for(const timer of timers.values())clearTimeout(timer);timers.clear();}
 function dismiss(app){
- if(!enabled()||!app?.rendered)return;
+ if(!enabled()||!app?.rendered||typeof app.close!=="function")return;
  const el=app.element?.[0]??app.element;
  const kind=contentKind(el);
  if(!kind||!setting(kind==="art"?"presentationDismissArt":"presentationDismissJournal"))return;
  if(timers.has(app))return;
  timers.set(app,setTimeout(()=>{
   timers.delete(app);
-  if(enabled()&&app.rendered&&setting(kind==="art"?"presentationDismissArt":"presentationDismissJournal"))Promise.resolve(app.close()).catch(e=>console.warn(ID,e));
+  if(enabled()&&app.rendered&&contentKind(app.element?.[0]??app.element)===kind&&setting(kind==="art"?"presentationDismissArt":"presentationDismissJournal"))Promise.resolve().then(()=>app.close()).catch(e=>console.warn(ID,"Automatic "+kind+" dismissal failed",e));
  },setting("presentationDismissDelay")*1000));
 }
 function clearApp(app){if(timers.has(app)){clearTimeout(timers.get(app));timers.delete(app);}}
