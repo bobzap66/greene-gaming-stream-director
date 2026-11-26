@@ -6,6 +6,9 @@ import {pixels} from "./layout/geometry.js";
 import {safeTarget,chooseExploration,sceneCombatTargets} from "./camera/director.js";
 import {registerGMDirector} from "./gm/panel.js";
 import {effectiveCommand,manualTarget,transitionDuration} from "./camera/manual.js";
+import {sampleExplored,unionVisible,createExplorationCache} from "./camera/explored.js";
+const explorationCache=createExplorationCache();
+let wideKey=null;
 let timer,flight=null,last=null,mode=null,partyId=null,sceneId=null,discardedCommand=null;
 Hooks.once("init",()=>{registerSettings();registerEditor();registerLayout();registerGMDirector();});
 const enabled=()=>game.ready&&isObserver()&&setting("enabled");
@@ -27,6 +30,7 @@ async function update(){
  else points=chooseExploration(individuals,parties,mode,partyId,setting("groupDistance")*grid,last);
  const rawCommand=setting("cameraCommand");
  const command=rawCommand?.issuedAt===discardedCommand?{mode:"auto"}:effectiveCommand(rawCommand,sceneId,game.user.id);
+ if(command.mode!=="wide"){wideKey=null;explorationCache.clear();}
  if(command.mode==="hold")return;
  const layout=setting("layoutEnabled");
  const rect=pixels(layout?region("camera"):{x:14,y:10,w:72,h:80},innerWidth,innerHeight);
@@ -36,7 +40,24 @@ async function update(){
  const center={x:stage.position.x,y:stage.position.y};
  const key=[sceneId,active,members,innerWidth,innerHeight,JSON.stringify(rect),command.mode,command.tokenId,command.issuedAt].join("|");
  const options={margin:layout?setting("frameMargin")/100:0,padding:layout?0:setting("padding")*grid,maxScale:setting("maxZoom"),force:key!==last?.key};
- const target=command.mode==="auto"?safeTarget(points,rect,center,current,options):manualTarget(command,{rect,center,current,sceneRect:canvas.dimensions.sceneRect,token:canvas.tokens.get(command.tokenId),visible,maxScale:options.maxScale,frame:t=>safeTarget([point(t)],rect,center,current,options)});
+ const autoFrame=()=>safeTarget(points,rect,center,current,options);
+ let exploredRect=null;
+ const tokenVision=canvas.fog?.tokenVision??canvas.visibility?.tokenVision??canvas.scene.tokenVision??true;
+ if(command.mode==="wide"&&tokenVision){
+  const cacheKey=sceneId+"|"+command.issuedAt;
+  if(wideKey!==cacheKey){explorationCache.clear();wideKey=cacheKey;}
+  exploredRect=explorationCache.get(cacheKey,performance.now(),()=>{
+   try{
+    const fog=canvas.fog,vision=canvas.visibility;
+    if(typeof fog?.isPointExplored!=="function"&&typeof vision?.testVisibility!=="function")return null;
+    return sampleExplored(canvas.dimensions.sceneRect,grid,p=>
+      (fog?.fogExploration&&typeof fog.isPointExplored==="function"&&fog.isPointExplored(p))||
+      (typeof vision?.testVisibility==="function"&&vision.testVisibility(p,{tolerance:0})));
+   }catch(e){console.warn(ID,"Wide Shot sampling unavailable",e);return null;}
+  });
+  if(exploredRect)exploredRect=unionVisible(exploredRect,[...individuals,...parties]);
+ }
+ const target=command.mode==="auto"?autoFrame():manualTarget(command,{rect,center,current,sceneRect:canvas.dimensions.sceneRect,exploredRect,tokenVision,wideMargin:setting("wideMargin")/100,autoFrame,token:canvas.tokens.get(command.tokenId),visible,maxScale:options.maxScale,frame:t=>safeTarget([point(t)],rect,center,current,options)});
 
  if(!target)return;
  if(Math.hypot(target.x-current.x,target.y-current.y)*current.scale<2&&Math.abs(target.scale-current.scale)<.005){last={...target,key};return;}
@@ -61,7 +82,7 @@ Hooks.on("updateToken",(doc,change)=>{
  }
  schedule();
 });
-function resetScene(){clearTimeout(timer);timer=null;flight=null;sceneId=null;last=null;mode=null;partyId=null;}
+function resetScene(){explorationCache.clear();wideKey=null;clearTimeout(timer);timer=null;flight=null;sceneId=null;last=null;mode=null;partyId=null;}
 Hooks.on("canvasTearDown",()=>{if(game.ready&&isObserver())discardedCommand=setting("cameraCommand")?.issuedAt??null;resetScene();});
 Hooks.on("canvasReady",()=>{resetScene();schedule();});
 for(const event of ["createToken","deleteToken","updateCombat","createCombat","deleteCombat","createCombatant","updateCombatant","deleteCombatant","sightRefresh","updateSetting"])Hooks.on(event,schedule);

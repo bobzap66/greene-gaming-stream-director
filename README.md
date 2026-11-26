@@ -8,6 +8,14 @@ Manifest: https://github.com/bobzap66/greene-gaming-stream-director/releases/lat
 
 Enable the module in your world, select your observer account, disable Monk's Screen, Party Screen and Vision tracking, then enable the spectator camera and reload clients. Give the observer Observer access to individual party actors and the Party actor where applicable. No actor permissions are modified by this module.
 
+## v0.3.1 — Explored-area Wide Shot
+
+Wide Shot (Alt+Shift+3) now frames the observer's explored fog and current visibility, with a configurable 10% total size margin. Up to 2,000 map samples are cached for at least one second while Wide Shot is active; visible party token bounds are included when sampling yields a usable rectangle. No fog or permissions are changed. The view expands as exploration grows. Sampling is approximate; narrow corridors and irregular shapes may leave dark space in the shot.
+
+Full Scene (Alt+Shift+7) retains the original whole-map establishing shot. Wide Shot uses the whole map when token vision is disabled and falls back to automatic framing when no usable bounds are found (or holds if no automatic targets exist). Existing shortcuts and layouts remain unchanged. Scene transitions still reset to Auto.
+
+The fog sampling and manual framing proof of concept was validated on Rusty Dragon Inn; the integrated feature and current-visibility sampling require live Foundry/OBS validation.
+
 ## v0.3.0 — GM Camera Director
 
 Open Game Settings → Stream Director → GM Camera Director, or press Alt+Shift+D. The floating panel directs only the configured observer when the spectator camera is enabled.
