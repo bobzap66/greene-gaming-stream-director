@@ -25,7 +25,7 @@ export function createActionDirector(){
  let key=null,shot=null,seen=new Set();
  function reset(){key=null;shot=null;seen.clear();}
  function scope(encounter){if(key!==encounter){reset();key=encounter;}}
- function record({encounter,action,now,holdMs=3200,fallbackIds=[]}){
+ function record({encounter,action,now,holdMs=6000,limitMs=30000,fallbackIds=[]}){
   scope(encounter);
   if(!action||seen.has(action.id))return false;
   seen.add(action.id);
@@ -34,7 +34,7 @@ export function createActionDirector(){
   const ids=action.targetIds.length?action.targetIds:continuation?shot.ids:fallbackIds;
   const start=continuation?shot.start:now;
   // A stream of rolls may extend a shot, but not indefinitely.
-  shot={actorId:action.actorId,ids:[...new Set(ids)].filter(id=>id!==action.actorId),start,until:Math.min(now+holdMs,start+Math.max(holdMs,10000))};
+  shot={actorId:action.actorId,ids:[...new Set(ids)].filter(id=>id!==action.actorId),start,until:Math.min(now+holdMs,limitMs===0?Infinity:start+Math.max(holdMs,limitMs))};
   return true;
  }
  function select({encounter,now,visiblePoints}){
