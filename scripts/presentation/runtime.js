@@ -1,8 +1,9 @@
 import {ID,setting,isObserver} from "../settings.js";
+import {maintenanceActive} from "./maintenance.js";
 import {hideRules,presentationCSS,combatRows,contentKind} from "./policy.js";
 let style,queued=false,busy=false,ownedCombat=null,chatActivated=false;
 const timers=new Map();
-const enabled=()=>game.ready&&isObserver()&&setting("presentationEnabled");
+const enabled=()=>game.ready&&isObserver()&&!maintenanceActive()&&setting("presentationEnabled");
 function clearTimers(){for(const timer of timers.values())clearTimeout(timer);timers.clear();}
 function dismiss(app){
  if(!enabled()||!app?.rendered)return;
@@ -29,7 +30,7 @@ function trimCombat(app){
  rows.forEach((row,i)=>row.toggleAttribute("data-ggsd-combat-hidden",!keep.has(i)));
 }
 async function reconcile(){
- if(busy)return;busy=true;
+ if(busy){schedule();return;}busy=true;
  try{
   const on=enabled();
   if(!style){style=document.createElement("style");style.id="ggsd-presentation";document.head.append(style);}
@@ -62,6 +63,6 @@ function schedule(){if(queued)return;queued=true;requestAnimationFrame(()=>{queu
 export function registerPresentation(){
  for(const event of ["renderApplication","renderApplicationV2"])Hooks.on(event,app=>{dismiss(app);if(enabled())schedule();});
  for(const event of ["closeApplication","closeApplicationV2"])Hooks.on(event,clearApp);
- for(const event of ["updateCombat","createCombat","deleteCombat","updateCombatant","createCombatant","deleteCombatant","combatTurnChange","canvasReady","updateSetting"])Hooks.on(event,schedule);
+ for(const event of ["updateCombat","createCombat","deleteCombat","updateCombatant","createCombatant","deleteCombatant","combatTurnChange","canvasReady","updateSetting","ggsdMaintenanceChanged"])Hooks.on(event,schedule);
  Hooks.once("ready",()=>{schedule();setInterval(()=>{if(enabled()||ownedCombat)schedule();},1000);});
 }

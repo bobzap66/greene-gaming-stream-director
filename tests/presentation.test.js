@@ -21,3 +21,10 @@ test("content detection is limited to image and journal windows",()=>{
  assert.equal(contentKind(element(".actor-sheet")),null);
  assert.equal(contentKind(null),null);
 });
+
+test("PF2e HUD suppression targets persistent children without hiding independent hotbar",()=>{
+ const css=presentationCSS({enabled:true,presentationChat:true,presentationPF2eHUD:true});
+ assert.match(css,/#pf2e-hud-persistent > :not\(#hotbar\)/);
+ assert.doesNotMatch(css,/#hotbar\{display:none/);
+ assert.doesNotMatch(presentationCSS({enabled:false,presentationPF2eHUD:true}),/pf2e-hud/);
+});

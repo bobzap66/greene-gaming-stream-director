@@ -8,6 +8,10 @@ Manifest: https://github.com/bobzap66/greene-gaming-stream-director/releases/lat
 
 Enable the module in your world, select your observer account, disable Monk's Screen, Party Screen and Vision tracking, then enable the spectator camera and reload clients. Give the observer Observer access to individual party actors and the Party actor where applicable. No actor permissions are modified by this module.
 
+## v0.4.4.1 — Observer maintenance and PF2e HUD
+
+Broadcast presentation now hides the PF2e HUD persistent controls by default using its specific DOM root, preserving independent hotbar visibility. No PF2e HUD preferences are modified. Press Alt+Shift+U on the designated observer browser to temporarily suspend presentation and layout styling, allowing ordinary access to Foundry settings. Press it again to restore configured presentation. Camera direction and camera safe-area framing continue unchanged. Maintenance is local and resets on reload; it does not modify world settings or other users. Dismissal timers are canceled during maintenance. Existing windows are not automatically re-timed unless rendered again. Live testing is required.
+
 ## v0.4.4 — Standalone broadcast presentation
 
 Enable Broadcast Presentation in module settings after disabling Monk's Common Display interface management. The feature is off by default and runs only for the designated non-GM observer. Separate switches hide navigation, canvas controls, hotbar, players, pause indicator and chat input. The native chat tab is activated and its navigation controls hidden; existing layout settings still position it. The native combat tracker is popped out for active same-scene combat and limited to three already-rendered combatants by default (1–20); module-opened tracker closes when combat ends. Artwork and journal windows on the observer auto-close after ten seconds by default (2–60), with independent switches. Dismissal applies to matching windows opened locally as well as GM-shared ones; it does not close GM windows or modify permissions. Native chat privacy and combat visibility are retained. No director panel controls were added.
