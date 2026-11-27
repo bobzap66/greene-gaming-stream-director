@@ -43,6 +43,12 @@ The maintenance shortcut works on the designated observer when presentation or l
 
 **Hotbar alternative:** Click **Create director hotbar macro** in the GM Director panel, then drag **Open Stream Director** from the Macros directory to your preferred hotbar slot.
 
+## v0.4.9 — Approved portrait roster
+
+Integration settings optionally restrict the API to an explicitly selected world-actor roster. Select characters, enable roster mode, and grant the designated observer Observer permission. Approved off-scene or unseen characters retain health data; their token ID is null and hidden/off-scene combatants never receive turn indicators. The original visible-token mode remains the default. Camera visibility rules are unchanged.
+
+Reactive Portraits connects to the separate opt-in GM API using its optional Chrome extension and local server. Enable GM portrait integration API and select the roster; the GM API always requires explicit roster approval, regardless of the observer roster-mode switch. The OBS observer can remain exclusively in OBS. The GM API exports world actor HP and non-hidden linked-token PC combat participation from the active encounter, with no scene or token identifiers. Observer permissions are not required for the GM API. See its repository for pairing and setup. No network transport is added to Stream Director itself.
+
 ## v0.4.8 — Observer integration API (v1)
 
 Optional read-only, browser-local API for other Foundry modules and future overlay bridges. Enable it under Integration settings; health is independently opt-in. Only the designated non-GM observer exposes snapshots. No external network endpoint, WebSocket server, OBS integration or reactive portrait client is included. No actor permissions are modified.

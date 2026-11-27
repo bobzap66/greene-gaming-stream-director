@@ -51,6 +51,9 @@ export function registerSettings(){
   register(target,{name:spec.name.replace(/^Broadcast: /,"").replace(/broadcast/gi,"tabletop"),hint:spec.hint,type,range,choices,default:value,requiresReload:false});
  }
  register("integrationEnabled",{name:"Enable observer integration API",hint:"Allow local integrations to read approved visible player-character state on the designated observer only. Does not transmit data to external services.",type:Boolean,default:false,requiresReload:false});
+ register("integrationGMEnabled",{name:"Enable GM portrait integration API",hint:"Allow the GM browser to export only explicitly approved roster characters. Independent of the observer API; no observer permissions required.",type:Boolean,default:false,requiresReload:false});
+ register("integrationRosterOnly",{name:"Use approved character roster",hint:"Export only explicitly selected player characters, including those off the current scene. Observer permission is still required.",type:Boolean,default:false,requiresReload:false});
+ register("integrationRoster",{name:"Approved character UUIDs",type:Object,default:[],config:false,requiresReload:false});
  register("integrationHealth",{name:"Include character health",hint:"Allow approved integrations to read current, maximum and temporary HP. Leave off if overlays should not display health.",type:Boolean,default:false,requiresReload:false});
  register("sharingDestination",{name:"Sharing destination",type:String,default:"observer",choices:{observer:"Designated observer only",all:"All connected players"},requiresReload:false});
  register("dismissCommand",{name:"Observer dismissal command",type:Object,default:{},config:false,requiresReload:false});
@@ -80,7 +83,7 @@ const groups={
  "Tabletop presentation":["tabletopShowChat","tabletopShowCombat",...Object.values(modeKeys).filter(k=>k.startsWith("tabletopPresentation"))],
  Bookmarks:["bookmarkHold","bookmarkIndefinite"],
  Sharing:["sharingDestination"],
- Integration:["integrationEnabled","integrationHealth"]
+ Integration:["integrationGMEnabled","integrationEnabled","integrationHealth","integrationRosterOnly"]
 };
 function registerCategoryMenus(){
  const {ApplicationV2}=foundry.applications.api;
@@ -104,10 +107,20 @@ function registerCategoryMenus(){
      input.id=id+"-"+key;label.htmlFor=input.id;row.append(input);root.append(row);fields.set(key,{input,spec});
      if(spec.hint){const hint=document.createElement("p");hint.className="hint";hint.textContent=spec.hint;root.append(hint);}
     }
+    const selected=new Map();
+    if(name==="Integration"){
+     const heading=document.createElement("h3");heading.textContent="Approved character roster";root.append(heading);
+     const saved=setting("integrationRoster"),observer=game.users.get(setting("observerId"));
+     for(const actor of Array.from(game.actors).filter(a=>a.type==="character"&&a.hasPlayerOwner).sort((a,b)=>a.name.localeCompare(b.name))){
+      const row=document.createElement("label");row.className="form-group";const check=document.createElement("input");check.type="checkbox";check.checked=saved.includes(actor.uuid);
+      row.append(check,document.createTextNode(actor.name+(observer&&actor.testUserPermission(observer,"OBSERVER")?"":" — observer API permission required")));root.append(row);selected.set(actor.uuid,check);
+     }
+    }
     const save=document.createElement("button");save.type="button";save.textContent="Save settings";
     save.onclick=async()=>{if(!game.user?.isGM)return;save.disabled=true;try{
      const changes=[];
      for(const [key,{input,spec}] of fields){const value=spec.type===Boolean?input.checked:spec.type===Number?Number(input.value):input.value;if(spec.type===Number&&(!input.value||!input.checkValidity()||!Number.isFinite(value)||(key==="tabletopWidth"&&value<0)))throw Error("Invalid value: "+spec.name);if(value!==setting(key))changes.push([key,value,spec]);}
+     if(name==="Integration"){const roster=[...selected].filter(([,check])=>check.checked).map(([uuid])=>uuid);if(JSON.stringify(roster)!==JSON.stringify(setting("integrationRoster")))await game.settings.set(ID,"integrationRoster",roster);}
      let reload=false;for(const [key,value,spec] of changes){await game.settings.set(ID,key,value);reload||=!!spec.requiresReload;}
      ui.notifications.info(reload?"Saved. Reload GM and observer clients to apply all changes.":"Stream Director settings saved.");await this.close();
     }catch(e){ui.notifications.error(e.message);}finally{save.disabled=false;}};
