@@ -46,3 +46,12 @@ Known limitations: relies on native token visibility; enemies outside current vi
 - Switch repeatedly between Tactical, Cinematic, Hybrid and Tabletop without applying. Verify exactly one comparison grid (or matching-preset message), with rows only for the current selection and scroll position reset.
 - Import a different preset, then select a built-in preset. Verify no imported comparison rows remain.
 - Apply a preset and verify the preview updates to the matching-preset message.
+
+## v0.6.0 OBS production checks (off-stream first)
+
+- Enable authenticated OBS WebSocket, configure local connection and scene mappings for each campaign; verify passwords are never returned by configuration API.
+- Enable GM OBS toolbar; verify current program scene, streaming and recording indicators and no toolbar on observer/player clients.
+- Change scenes directly in OBS and verify status updates; manually select each mapped role from Foundry, cancel a confirmation, and confirm no automatic transition occurs.
+- Verify controls disabled for an inactive campaign, disconnected OBS, missing mapping and stale bridge. Restart OBS and verify recovery.
+- Start combat on mapped intro/break scene and verify a warning without a scene change. Verify opt-in recording warning.
+- Check existing HP, initiative, Discord portraits, camera, intro/outro automation and Tabletop mode remain unchanged.
