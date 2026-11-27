@@ -1,3 +1,4 @@
+import {registerProduction} from "./production/runtime.js";
 import {registerIntegration} from "./integration/runtime.js";
 import {registerSharing} from "./gm/sharing.js";
 import {cluster} from "./camera/framing.js";
@@ -23,7 +24,7 @@ const explorationCache=createExplorationCache();
 let wideKey=null;
 let heartbeat=null;
 let timer,flight=null,last=null,mode=null,partyId=null,sceneId=null,discardedCommand=null;
-Hooks.once("init",()=>{registerSettings();registerEditor();registerLayout();registerGMDirector();registerIntegration();registerSharing();registerPresentation();registerMaintenance();registerTabletop();});
+Hooks.once("init",()=>{registerSettings();registerEditor();registerLayout();registerGMDirector();registerIntegration();registerProduction();registerSharing();registerPresentation();registerMaintenance();registerTabletop();});
 const enabled=()=>game.ready&&isObserver()&&setting("enabled")&&!tabletopMode();
 const visible=t=>t&&t.actor&&t.isVisible&&!t.document.hidden;
 const combatTargets=()=>sceneCombatTargets(game.combat,canvas.scene?.id,id=>canvas.tokens.get(id),visible);
