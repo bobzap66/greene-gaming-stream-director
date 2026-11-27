@@ -9,7 +9,7 @@ export function refreshObserverChoices(){
 }
 export const tabletopRegions={art:{x:5,y:5,w:90,h:90},chat:{x:78,y:5,w:21,h:90},combat:{x:2,y:5,w:20,h:35}};
 export const modeKeys={layoutEnabled:"tabletopLayoutEnabled",artEnabled:"tabletopArtEnabled",chatEnabled:"tabletopChatEnabled",combatEnabled:"tabletopCombatEnabled",chatScale:"tabletopChatScale",regions:"tabletopRegions",presentationEnabled:"tabletopPresentationEnabled",presentationChat:"tabletopShowChat",presentationCombat:"tabletopShowCombat"};
-for(const k of ["Navigation","Controls","Hotbar","Players","Pause","ChatInput","DismissArt","DismissJournal","PF2eHUD","CombatLimit","DismissDelay"])modeKeys["presentation"+k]="tabletopPresentation"+k;
+for(const k of ["Navigation","Controls","Hotbar","Players","Pause","ChatInput","DismissArt","DismissJournal","DismissUserConfig","PF2eHUD","CombatLimit","DismissDelay"])modeKeys["presentation"+k]="tabletopPresentation"+k;
 export const modeSetting=key=>setting(setting("observerMode")==="tabletop"?(modeKeys[key]??key):key);
 export function registerSettings(){
  const register=(key,data)=>game.settings.register(ID,key,{scope:"world",config:["observerId","observerMode","enabled"].includes(key),requiresReload:true,...data});
@@ -34,7 +34,7 @@ export function registerSettings(){
  register("bookmarkHold",{name:"Bookmark hold duration (seconds)",hint:"Return to the preceding camera mode after this hold plus the selected transition duration.",type:Number,default:10,range:{min:2,max:60,step:1},requiresReload:false});
  register("bookmarkIndefinite",{name:"Hold bookmarks indefinitely",hint:"Disable automatic return for subsequently recalled bookmarks.",type:Boolean,default:false,requiresReload:false});
  register("presentationEnabled",{name:"Enable broadcast presentation",hint:"Observer-only interface cleanup and automatic presentation.",type:Boolean,default:false,requiresReload:false});
- for(const [key,name] of Object.entries({Navigation:"Hide scene navigation",Controls:"Hide canvas controls",Hotbar:"Hide macro hotbar",Players:"Hide player list",Pause:"Hide pause indicator",ChatInput:"Hide chat input",Chat:"Show chat log",Combat:"Automatically display combat tracker",DismissArt:"Automatically dismiss artwork",DismissJournal:"Automatically dismiss journals"}))register("presentation"+key,{name:"Broadcast: "+name,type:Boolean,default:true,requiresReload:false});
+ for(const [key,name] of Object.entries({Navigation:"Hide scene navigation",Controls:"Hide canvas controls",Hotbar:"Hide macro hotbar",Players:"Hide player list",Pause:"Hide pause indicator",ChatInput:"Hide chat input",Chat:"Show chat log",Combat:"Automatically display combat tracker",DismissArt:"Automatically dismiss artwork",DismissJournal:"Automatically dismiss journals",DismissUserConfig:"Automatically dismiss Player Configuration"}))register("presentation"+key,{name:"Broadcast: "+name,type:Boolean,default:true,requiresReload:false});
  register("presentationPF2eHUD",{name:"Broadcast: hide PF2e Persistent HUD",hint:"Hide the PF2e HUD module persistent controls on the stream observer without changing its settings.",type:Boolean,default:true,requiresReload:false});
  register("presentationCombatLimit",{name:"Broadcast: visible combatants",hint:"Limit native observer combat tracker rows around the current turn.",type:Number,default:3,range:{min:1,max:20,step:1},requiresReload:false});
  register("presentationDismissDelay",{name:"Broadcast: artwork and journal dismissal (seconds)",type:Number,default:10,range:{min:2,max:60,step:1},requiresReload:false});
@@ -52,7 +52,7 @@ export function registerSettings(){
  }
  register("integrationEnabled",{name:"Enable observer integration API",hint:"Allow local integrations to read approved visible player-character state on the designated observer only. Does not transmit data to external services.",type:Boolean,default:false,requiresReload:false});
  register("integrationGMEnabled",{name:"Enable GM portrait integration API",hint:"Allow the GM browser to export only explicitly approved roster characters. Independent of the observer API; no observer permissions required.",type:Boolean,default:false,requiresReload:false});
- register("integrationRosterOnly",{name:"Use approved character roster",hint:"Export only explicitly selected player characters, including those off the current scene. Observer permission is still required.",type:Boolean,default:false,requiresReload:false});
+ register("integrationRosterOnly",{name:"Restrict observer API to approved roster",hint:"Only affects the observer API. Approved off-scene characters are included if the observer has permission.",type:Boolean,default:false,requiresReload:false});
  register("integrationRoster",{name:"Approved character UUIDs",type:Object,default:[],config:false,requiresReload:false});
  register("integrationHealth",{name:"Include character health",hint:"Allow approved integrations to read current, maximum and temporary HP. Leave off if overlays should not display health.",type:Boolean,default:false,requiresReload:false});
  register("sharingDestination",{name:"Sharing destination",type:String,default:"observer",choices:{observer:"Designated observer only",all:"All connected players"},requiresReload:false});
@@ -83,7 +83,7 @@ const groups={
  "Tabletop presentation":["tabletopShowChat","tabletopShowCombat",...Object.values(modeKeys).filter(k=>k.startsWith("tabletopPresentation"))],
  Bookmarks:["bookmarkHold","bookmarkIndefinite"],
  Sharing:["sharingDestination"],
- Integration:["integrationGMEnabled","integrationEnabled","integrationHealth","integrationRosterOnly"]
+ Integration:["integrationGMEnabled","integrationEnabled","integrationRosterOnly","integrationHealth"]
 };
 function registerCategoryMenus(){
  const {ApplicationV2}=foundry.applications.api;
@@ -96,8 +96,10 @@ function registerCategoryMenus(){
     content.replaceChildren(root);Object.assign(root.style,{overflowY:"auto",maxHeight:"100%",padding:"8px"});
     const fields=new Map();
     for(const key of keys){
+     if(name==="Integration"&&["integrationGMEnabled","integrationEnabled","integrationHealth"].includes(key)){const heading=document.createElement("h3");heading.textContent={integrationGMEnabled:"GM portrait integration",integrationEnabled:"Observer integration",integrationHealth:"Shared data preferences"}[key];heading.style.margin="14px 0 8px";root.append(heading);}
      const spec=game.settings.settings.get(ID+"."+key),row=document.createElement("div"),label=document.createElement("label");
      row.className="form-group";label.textContent=spec.name;row.append(label);
+     if(name==="Integration"){Object.assign(row.style,{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",margin:"6px 0"});label.style.flex="1";}
      const input=document.createElement(spec.choices?"select":"input");
      if(spec.choices){for(const [v,n] of Object.entries(spec.choices)){const opt=document.createElement("option");opt.value=v;opt.textContent=n;input.append(opt);}}
      else if(spec.type===Boolean)input.type="checkbox";
@@ -109,12 +111,36 @@ function registerCategoryMenus(){
     }
     const selected=new Map();
     if(name==="Integration"){
-     const heading=document.createElement("h3");heading.textContent="Approved character roster";root.append(heading);
+     const heading=document.createElement("h3");heading.textContent="Approved character roster";heading.style.margin="16px 0 8px";root.append(heading);
+     const explanation=document.createElement("p");explanation.textContent="The GM API always uses this roster. The observer API uses it only when roster restriction is enabled. Nothing is exported until the relevant API is enabled.";root.append(explanation);
      const saved=setting("integrationRoster"),observer=game.users.get(setting("observerId"));
-     for(const actor of Array.from(game.actors).filter(a=>a.type==="character"&&a.hasPlayerOwner).sort((a,b)=>a.name.localeCompare(b.name))){
-      const row=document.createElement("label");row.className="form-group";const check=document.createElement("input");check.type="checkbox";check.checked=saved.includes(actor.uuid);
-      row.append(check,document.createTextNode(actor.name+(observer&&actor.testUserPermission(observer,"OBSERVER")?"":" — observer API permission required")));root.append(row);selected.set(actor.uuid,check);
+     const actors=Array.from(game.actors).filter(a=>a.type==="character"&&a.hasPlayerOwner).sort((a,b)=>a.name.localeCompare(b.name));
+     const controls=document.createElement("div");Object.assign(controls.style,{display:"flex",flexWrap:"wrap",gap:"6px",margin:"8px 0"});root.append(controls);
+     const count=document.createElement("p");count.setAttribute("aria-live","polite");root.append(count);
+     const refreshCount=()=>{count.textContent=[...selected.values()].filter(c=>c.checked).length+" of "+actors.length+" approved";};
+     const button=(text,action)=>{const b=document.createElement("button");b.type="button";b.textContent=text;b.style.flex="1";b.onclick=()=>{action();refreshCount();};controls.append(b);return b;};
+     button("Select all",()=>{for(const c of selected.values())c.checked=true;});
+     button("Clear all",()=>{for(const c of selected.values())c.checked=false;});
+     let partyMembers=[];
+     try{const members=game.actors.party?.members;if(members&&typeof members[Symbol.iterator]==="function")partyMembers=Array.from(members).map(a=>a.uuid).filter(Boolean);}catch{}
+     const partySet=new Set(partyMembers);
+     if(actors.some(a=>partySet.has(a.uuid)))button("Select active party",()=>{for(const [uuid,c] of selected)c.checked=partySet.has(uuid);});
+     const list=document.createElement("div");Object.assign(list.style,{display:"flex",flexDirection:"column",gap:"4px",margin:"8px 0 16px"});root.append(list);
+     const warnings=[];
+     for(const actor of actors){
+      const row=document.createElement("label");Object.assign(row.style,{display:"flex",alignItems:"center",gap:"10px",padding:"6px 8px",border:"1px solid var(--color-border-light-tertiary, #777)",borderRadius:"5px",cursor:"pointer"});
+      const check=document.createElement("input");check.type="checkbox";check.checked=Array.isArray(saved)&&saved.includes(actor.uuid);check.style.flex="0 0 auto";check.addEventListener("change",refreshCount);
+      const portrait=document.createElement("img");portrait.src=actor.img||"icons/svg/mystery-man.svg";portrait.alt="";Object.assign(portrait.style,{width:"36px",height:"36px",objectFit:"cover",border:"0",borderRadius:"4px",flex:"0 0 36px"});portrait.onerror=()=>{portrait.onerror=null;portrait.src="icons/svg/mystery-man.svg";};
+      const details=document.createElement("div");details.style.flex="1";details.style.minWidth="0";
+      const title=document.createElement("div");title.textContent=actor.name;title.style.fontWeight="600";details.append(title);
+      const warning=document.createElement("small");warning.textContent="Observer permission required";warning.style.display="none";details.append(warning);
+      warnings.push({warning,permitted:!!observer&&actor.testUserPermission(observer,"OBSERVER")});
+      row.append(check,portrait,details);list.append(row);selected.set(actor.uuid,check);
      }
+     if(!actors.length){const empty=document.createElement("p");empty.textContent="No player-owned world characters found.";list.append(empty);}
+     const refreshWarnings=()=>{const show=fields.get("integrationEnabled").input.checked&&fields.get("integrationRosterOnly").input.checked;for(const {warning,permitted} of warnings)warning.style.display=show&&!permitted?"block":"none";};
+     for(const key of ["integrationEnabled","integrationRosterOnly"])fields.get(key).input.addEventListener("change",refreshWarnings);
+     refreshWarnings();refreshCount();
     }
     const save=document.createElement("button");save.type="button";save.textContent="Save settings";
     save.onclick=async()=>{if(!game.user?.isGM)return;save.disabled=true;try{
