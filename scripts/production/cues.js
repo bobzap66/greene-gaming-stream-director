@@ -20,7 +20,7 @@ function publish(view){
  const safe=show&&view?{kind:view.kind,label:view.label,deadline:view.remainingMs===null||view.paused?null:Date.now()+view.remainingMs,pausedMs:view.paused?view.remainingMs:null}:null;
  const signature=JSON.stringify(safe?{kind:safe.kind,label:safe.label,pausedMs:safe.pausedMs,deadline:safe.deadline===null?null:Math.round(safe.deadline/2000)}:null);
  const now=Date.now();if(signature===lastPublished&&now-lastPublish<5000)return;
- lastPublished=signature;lastPublish=now;pending={view:safe,expires:now+12000};flush();
+ lastPublished=signature;lastPublish=now;pending={view:safe,expires:now+45000};flush();
 }
 export function drawCues(status,node){
  if(!game.user?.isGM)return;
