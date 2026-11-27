@@ -1,3 +1,4 @@
+import {registerCues,drawCues} from "./cues.js";
 import {ID,setting} from "../settings.js";
 import {roles,normalizeStatus,productionWarning,protectedScene,mappedRoles} from "./policy.js";
 let transport=null,status=null,root=null,interval=null,busy=false,polling=null,lastWarning=null,lastSuccess=0,lastMappings=null;
@@ -17,6 +18,7 @@ function draw(){
  if(!root)return;
  root.hidden=!enabled();if(!enabled())return;
  const s=fresh()?status:null;
+ drawCues(s,root.querySelector('[data-obs-cue]'));
  root.querySelector("[data-obs-status]").textContent=!s?"OBS bridge waiting":!s.enabled?"OBS disabled locally":!s.connected?"OBS disconnected":!s.active?"OBS • another campaign selected":(s.streaming?"LIVE":"Not live")+" · "+(s.recording?"REC":"Not recording");
  root.querySelector("[data-obs-scene]").textContent=s?.connected?s.scene||"Unknown scene":"No current scene";
  const warning=setting("obsProductionWarnings")?productionWarning(s,{combat:!!game.combat?.started&&!!game.combat?.isActive,expectRecording:setting("obsExpectRecording")}):null;
@@ -63,7 +65,7 @@ function mount(){
  header.addEventListener("pointermove",e=>{if(drag?.id===e.pointerId)clampPosition(e.clientX-drag.dx,e.clientY-drag.dy);});
  const stop=e=>{if(drag?.id!==e.pointerId)return;drag=null;const rect=root.getBoundingClientRect();saveLayout({x:rect.left,y:rect.top});};
  header.addEventListener("pointerup",stop);header.addEventListener("pointercancel",stop);header.addEventListener("lostpointercapture",stop);
- const body=document.createElement("div"),scene=document.createElement("div"),warning=document.createElement("div");scene.dataset.obsScene="";warning.dataset.obsWarning="";Object.assign(warning.style,{color:"#ffd18a",background:"#5a351a",padding:"5px",fontWeight:"700",borderRadius:"3px"});root.append(warning);body.append(scene);
+ const body=document.createElement("div"),scene=document.createElement("div"),warning=document.createElement("div");scene.dataset.obsScene="";warning.dataset.obsWarning="";Object.assign(warning.style,{color:"#ffd18a",background:"#5a351a",padding:"5px",fontWeight:"700",borderRadius:"3px"});root.append(warning);const cue=document.createElement('div');cue.dataset.obsCue='';cue.style.color='#e0cd9a';cue.style.fontWeight='bold';root.append(cue);body.append(scene);
  const buttons=document.createElement("div");Object.assign(buttons.style,{display:"flex",flexWrap:"wrap",gap:"4px",marginTop:"5px"});
  for(const [role,label] of Object.entries(roles)){const b=document.createElement("button");b.type="button";b.dataset.obsRole=role;b.textContent=label;Object.assign(b.style,{fontSize:"11px",height:"26px",padding:"3px 6px",width:"auto"});if(role==="technical"){b.style.color="#ffd18a";b.style.borderColor="#c99044";}b.onclick=()=>void change(role);buttons.append(b);}
  const empty=document.createElement("small");empty.dataset.obsEmpty="";body.append(buttons,empty);root.append(body);
@@ -73,8 +75,9 @@ function mount(){
  if(Number.isFinite(layout.x)&&Number.isFinite(layout.y))clampPosition(layout.x,layout.y);
  window.addEventListener("resize",resize);
 }
-function sync(){if(!enabled()){root?.remove();root=null;window.removeEventListener("resize",resize);clearInterval(interval);interval=null;status=null;lastMappings=null;lastWarning=null;return;}mount();if(interval===null)interval=setInterval(()=>void refresh(),2500);void refresh();}
+function sync(){if(!enabled()){if(game.ready&&game.user?.isGM)drawCues(null,null);root?.remove();root=null;window.removeEventListener("resize",resize);clearInterval(interval);interval=null;status=null;lastMappings=null;lastWarning=null;return;}mount();if(interval===null)interval=setInterval(()=>void refresh(),2500);void refresh();}
 export function registerProduction(){
+ registerCues();
  game.settings.register(ID,"obsProductionEnabled",{name:"Enable GM OBS production toolbar",hint:"Requires Reactive Portraits OBS setup and paired Chrome extension. GM-only; never starts streams or recordings.",scope:"world",config:true,type:Boolean,default:false,requiresReload:false,onChange:()=>{if(game.ready)sync();}});
  game.settings.register(ID,"obsProductionWarnings",{name:"OBS production warnings",scope:"world",config:true,type:Boolean,default:true,requiresReload:false});
  game.settings.register(ID,"obsExpectRecording",{name:"Warn if gameplay is not recording",scope:"world",config:true,type:Boolean,default:false,requiresReload:false});
