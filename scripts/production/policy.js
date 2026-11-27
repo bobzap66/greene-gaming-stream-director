@@ -5,7 +5,7 @@ export function mappedRoles(status){return Object.keys(roles).filter(role=>!!sta
 export function normalizeStatus(value){
  if(!value||typeof value!=="object")return null;
  const mappings={};for(const key of Object.keys(roles))if(typeof value.mappings?.[key]==="string")mappings[key]=value.mappings[key];
- return {enabled:value.enabled===true,connected:value.connected===true,active:value.active===true,scene:typeof value.scene==="string"?value.scene:null,streaming:value.streaming===true,recording:value.recording===true,mappings};
+ return {enabled:value.enabled===true,connected:value.connected===true,active:value.active===true,scene:typeof value.scene==="string"?value.scene:null,streaming:value.streaming===true,recording:value.recording===true,cue:value.cue&&typeof value.cue.id==='string'&&Number.isFinite(value.cue.elapsedMs)?{id:value.cue.id,elapsedMs:Math.max(0,value.cue.elapsedMs),introReady:value.cue.introReady===true,introRemainingMs:Number.isFinite(value.cue.introRemainingMs)?Math.max(0,value.cue.introRemainingMs):null}:null,mappings};
 }
 export function productionWarning(status,{combat=false,expectRecording=false}={}){
  if(!status?.enabled||!status.active)return null;
