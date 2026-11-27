@@ -43,6 +43,12 @@ The maintenance shortcut works on the designated observer when presentation or l
 
 **Hotbar alternative:** Click **Create director hotbar macro** in the GM Director panel, then drag **Open Stream Director** from the Macros directory to your preferred hotbar slot.
 
+## v0.4.8 — Observer integration API (v1)
+
+Optional read-only, browser-local API for other Foundry modules and future overlay bridges. Enable it under Integration settings; health is independently opt-in. Only the designated non-GM observer exposes snapshots. No external network endpoint, WebSocket server, OBS integration or reactive portrait client is included. No actor permissions are modified.
+
+See [Integration API](docs/integration-api.md) for schema, subscriptions, privacy rules and examples. Existing GM openDirector API remains intact. Ordinary players have no integration timers or snapshot scanning; the observer computes changes on demand or when subscribed, with event coalescing and duplicate suppression. Live PF2e/SF2e validation is required.
+
 ## v0.4.7 — Display profiles and tabletop viewport (experimental)
 
 Alt+Shift+C opens observer ruler calibration with named saved profiles, optional Detect monitors (requires a supported browser and permission), and profile selection/deletion. Previously granted monitor permission is reused at login. Profile matching checks CSS screen width, height and device pixel ratio, plus available monitor label; labels are not unique hardware IDs. Without labels, select a matching profile manually if display identity is uncertain. Browser/device-local storage; not guaranteed to transfer between worlds or browsers. Existing single calibration remains a fallback until profiles are saved. No physical size is inferred by the API. Confirm the ruler against the actual display before placing miniatures.

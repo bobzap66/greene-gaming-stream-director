@@ -50,6 +50,8 @@ export function registerSettings(){
   const value=source==="layoutEnabled"?false:source==="artEnabled"?false:spec.default;
   register(target,{name:spec.name.replace(/^Broadcast: /,"").replace(/broadcast/gi,"tabletop"),hint:spec.hint,type,range,choices,default:value,requiresReload:false});
  }
+ register("integrationEnabled",{name:"Enable observer integration API",hint:"Allow local integrations to read approved visible player-character state on the designated observer only. Does not transmit data to external services.",type:Boolean,default:false,requiresReload:false});
+ register("integrationHealth",{name:"Include character health",hint:"Allow approved integrations to read current, maximum and temporary HP. Leave off if overlays should not display health.",type:Boolean,default:false,requiresReload:false});
  register("sharingDestination",{name:"Sharing destination",type:String,default:"observer",choices:{observer:"Designated observer only",all:"All connected players"},requiresReload:false});
  register("dismissCommand",{name:"Observer dismissal command",type:Object,default:{},config:false,requiresReload:false});
  register("modeSettingsMigrated",{name:"Mode settings migration",type:Boolean,default:false,config:false,requiresReload:false});
@@ -77,7 +79,8 @@ const groups={
  Tabletop:["tabletopWidth","tabletopGridInches","tabletopRememberPosition","tabletopSnapMovement","tabletopLayoutEnabled","tabletopArtEnabled","tabletopChatEnabled","tabletopCombatEnabled","tabletopChatScale"],
  "Tabletop presentation":["tabletopShowChat","tabletopShowCombat",...Object.values(modeKeys).filter(k=>k.startsWith("tabletopPresentation"))],
  Bookmarks:["bookmarkHold","bookmarkIndefinite"],
- Sharing:["sharingDestination"]
+ Sharing:["sharingDestination"],
+ Integration:["integrationEnabled","integrationHealth"]
 };
 function registerCategoryMenus(){
  const {ApplicationV2}=foundry.applications.api;
