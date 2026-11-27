@@ -18,7 +18,9 @@ function draw(){
  if(!root)return;
  root.hidden=!enabled();if(!enabled())return;
  const s=fresh()?status:null;
- drawCues(s,root.querySelector('[data-obs-cue]'));
+ const elapsed=Math.max(0,Date.now()-lastSuccess);
+ const cueStatus=s?.cue?{...s,cue:{...s.cue,elapsedMs:s.cue.elapsedMs+elapsed,introRemainingMs:s.cue.introRemainingMs===null?null:Math.max(0,s.cue.introRemainingMs-elapsed)}}:s;
+ drawCues(cueStatus,root.querySelector('[data-obs-cue]'));
  root.querySelector("[data-obs-status]").textContent=!s?"OBS bridge waiting":!s.enabled?"OBS disabled locally":!s.connected?"OBS disconnected":!s.active?"OBS • another campaign selected":(s.streaming?"LIVE":"Not live")+" · "+(s.recording?"REC":"Not recording");
  root.querySelector("[data-obs-scene]").textContent=s?.connected?s.scene||"Unknown scene":"No current scene";
  const warning=setting("obsProductionWarnings")?productionWarning(s,{combat:!!game.combat?.started&&!!game.combat?.isActive,expectRecording:setting("obsExpectRecording")}):null;
