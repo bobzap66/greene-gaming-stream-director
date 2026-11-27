@@ -19,8 +19,11 @@ function draw(){
  root.hidden=!enabled();if(!enabled())return;
  const s=fresh()?status:null;
  const elapsed=Math.max(0,Date.now()-lastSuccess);
- const cueStatus=s?.cue?{...s,cue:{...s.cue,elapsedMs:s.cue.elapsedMs+elapsed,introRemainingMs:s.cue.introRemainingMs===null?null:Math.max(0,s.cue.introRemainingMs-elapsed)}}:s;
+ const cueStatus=s?.cue?{...s,cue:{...s.cue,elapsedMs:s.cue.elapsedMs+elapsed,introRemainingMs:s.cue.introRemainingMs===null?null:Math.max(0,s.cue.introRemainingMs-elapsed),breakTimer:s.cue.breakTimer?.mode==="running"?{...s.cue.breakTimer,remainingMs:Math.max(0,s.cue.breakTimer.remainingMs-elapsed)}:s.cue.breakTimer}}:s;
  drawCues(cueStatus,root.querySelector('[data-obs-cue]'));
+ const tools=root.querySelector('[data-break-tools]'),timer=s?.cue?.breakTimer;
+ tools.hidden=!(setting("obsBreakEnabled")&&s?.active&&s.connected&&s.scene===s.mappings.break&&timer);
+ for(const b of tools.querySelectorAll("button")){const a=b.dataset.action;b.disabled=busy||(a==="pause"&&!(timer?.mode==="running"&&timer.remainingMs>0))||(a==="resume"&&timer?.mode!=="paused")||(a==="extend"&&timer?.mode==="indefinite");b.hidden=(a==="pause"&&timer?.mode==="paused")||(a==="resume"&&timer?.mode!=="paused");}
  root.querySelector("[data-obs-status]").textContent=!s?"OBS bridge waiting":!s.enabled?"OBS disabled locally":!s.connected?"OBS disconnected":!s.active?"OBS • another campaign selected":(s.streaming?"LIVE":"Not live")+" · "+(s.recording?"REC":"Not recording");
  root.querySelector("[data-obs-scene]").textContent=s?.connected?s.scene||"Unknown scene":"No current scene";
  const warning=setting("obsProductionWarnings")?productionWarning(s,{combat:!!game.combat?.started&&!!game.combat?.isActive,expectRecording:setting("obsExpectRecording")}):null;
@@ -42,15 +45,35 @@ async function refresh(){
  finally{if(polling===t)polling=null;}
  draw();
 }
+function chooseBreak(){
+ return new Promise(resolve=>{
+  const dialog=document.createElement("dialog");Object.assign(dialog.style,{background:"#19212c",color:"#eee",padding:"20px",border:"1px solid #bda66b",borderRadius:"8px",minWidth:"280px"});
+  const title=document.createElement("h3");title.textContent="Start intermission";
+  const select=document.createElement("select");for(const [v,label] of [["5","5 minutes"],["10","10 minutes"],["15","15 minutes"],["20","20 minutes"],["custom","Custom duration"],["none","Indefinite — no countdown"]]){const o=document.createElement("option");o.value=v;o.textContent=label;select.append(o);}
+  select.value="10";const custom=document.createElement("input");custom.type="number";custom.min="1";custom.max="120";custom.step="1";custom.value="10";custom.hidden=true;select.onchange=()=>{custom.hidden=select.value!=="custom";};
+  const start=document.createElement("button"),cancel=document.createElement("button");start.textContent="Start Break";cancel.textContent="Cancel";start.type=cancel.type="button";
+  let result;start.onclick=()=>{const n=select.value==="none"?null:Number(select.value==="custom"?custom.value:select.value);if(n!==null&&(!Number.isInteger(n)||n<1||n>120)){ui.notifications.warn("Choose 1–120 minutes.");return;}result=n;dialog.close();};cancel.onclick=()=>dialog.close();
+  dialog.addEventListener("close",()=>{dialog.remove();resolve(result);},{once:true});dialog.append(title,select,custom,start,cancel);document.body.append(dialog);dialog.showModal();
+ });
+}
+async function adjustBreak(action,minutes){
+ if(busy||!enabled()||!fresh()||!status?.active||!status.connected||status.scene!==status.mappings.break||!status.cue?.id||!transport)return;
+ const t=transport,expectedScene=status.scene,cueId=status.cue.id;
+ if(action==="start"){minutes=await chooseBreak();if(minutes===undefined)return;}
+ if(t!==transport||!fresh()||status?.cue?.id!==cueId||!enabled())return;
+ busy=true;draw();try{const v=await t.request({breakAction:action,minutes,expectedScene,cueId});if(t===transport&&enabled())accept(v);}catch(e){ui.notifications.warn("OBS: "+e.message);}finally{busy=false;await refresh();}
+}
 async function change(role){
  if(!enabled()||busy||!transport||!fresh()||!status.connected||!status.active||!status.mappings[role])return;
  const expectedScene=status.scene,scene=status.mappings[role],t=transport;
- if(role==="gameplay"&&protectedScene(status)){
+ let breakMinutes;
+ if(role==="break"&&setting("obsBreakEnabled")){breakMinutes=await chooseBreak();if(breakMinutes===undefined)return;}
+ else if(role==="gameplay"&&protectedScene(status)){
   if(!confirm("Switch OBS from "+expectedScene+" to "+scene+"? Confirm players are ready and microphones are safe."))return;
  }else if(!confirm("Switch OBS to "+scene+"?"))return;
  if(!enabled()||t!==transport||!fresh()||!status.active||status.scene!==expectedScene||status.mappings[role]!==scene)return;
  busy=true;draw();
- try{const value=await t.request({role,expectedScene});if(t===transport&&enabled())accept(value);}
+ try{const value=await t.request({role,expectedScene,breakMinutes});if(t===transport&&enabled())accept(value);}
  catch(e){ui.notifications.warn("OBS: "+e.message);}
  finally{busy=false;await refresh();}
 }
@@ -68,6 +91,8 @@ function mount(){
  const stop=e=>{if(drag?.id!==e.pointerId)return;drag=null;const rect=root.getBoundingClientRect();saveLayout({x:rect.left,y:rect.top});};
  header.addEventListener("pointerup",stop);header.addEventListener("pointercancel",stop);header.addEventListener("lostpointercapture",stop);
  const body=document.createElement("div"),scene=document.createElement("div"),warning=document.createElement("div");scene.dataset.obsScene="";warning.dataset.obsWarning="";Object.assign(warning.style,{color:"#ffd18a",background:"#5a351a",padding:"5px",fontWeight:"700",borderRadius:"3px"});root.append(warning);const cue=document.createElement('div');cue.dataset.obsCue='';cue.style.color='#e0cd9a';cue.style.fontWeight='bold';root.append(cue);body.append(scene);
+ const breakTools=document.createElement("div");breakTools.dataset.breakTools="";breakTools.hidden=true;
+ for(const [action,label,minutes] of [["extend","+1 min",1],["extend","+5 min",5],["pause","Pause"],["resume","Resume"],["start","Set timer"],["end","End Break"]]){const b=document.createElement("button");b.type="button";b.dataset.action=action;b.textContent=label;b.style.width="auto";b.onclick=()=>action==="end"?void change("gameplay"):void adjustBreak(action,minutes);breakTools.append(b);}body.append(breakTools);
  const buttons=document.createElement("div");Object.assign(buttons.style,{display:"flex",flexWrap:"wrap",gap:"4px",marginTop:"5px"});
  for(const [role,label] of Object.entries(roles)){const b=document.createElement("button");b.type="button";b.dataset.obsRole=role;b.textContent=label;Object.assign(b.style,{fontSize:"11px",height:"26px",padding:"3px 6px",width:"auto"});if(role==="technical"){b.style.color="#ffd18a";b.style.borderColor="#c99044";}b.onclick=()=>void change(role);buttons.append(b);}
  const empty=document.createElement("small");empty.dataset.obsEmpty="";body.append(buttons,empty);root.append(body);
