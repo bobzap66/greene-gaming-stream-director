@@ -55,3 +55,12 @@ Known limitations: relies on native token visibility; enemies outside current vi
 - Verify controls disabled for an inactive campaign, disconnected OBS, missing mapping and stale bridge. Restart OBS and verify recovery.
 - Start combat on mapped intro/break scene and verify a warning without a scene change. Verify opt-in recording warning.
 - Check existing HP, initiative, Discord portraits, camera, intro/outro automation and Tabletop mode remain unchanged.
+
+## v0.6.0.1 production polish
+
+- Map Standby and Technical Difficulties separately; verify old scene mappings persist and unmapped roles are hidden.
+- Change mappings while GM toolbar is open; verify buttons update without reload. Disconnect OBS and bridge; verify cached mapped controls remain disabled.
+- Verify combat warnings and gameplay confirmation from Standby and Technical Difficulties, including collapsed toolbar.
+- Drag toolbar, collapse and reload; verify position and collapsed state persist; resize window and verify access. Disable/enable toolbar without browser refresh.
+- Assign optional production shortcuts through Configure Controls; verify confirmation, GM-only and inactive-campaign guards.
+- In local OBS setup verify status refreshes, incorrect password is diagnosed and unsaved mapping choices survive polling.
