@@ -1,6 +1,6 @@
 import {ID,setting} from "../settings.js";
 import {roles,normalizeStatus,productionWarning} from "./policy.js";
-let transport=null,status=null,root=null,interval=null,busy=false,lastWarning=null,lastSuccess=0;
+let transport=null,status=null,root=null,interval=null,busy=false,polling=null,lastWarning=null,lastSuccess=0;
 const enabled=()=>game.ready&&game.user?.isGM&&setting("obsProductionEnabled");
 const fresh=()=>status&&Date.now()-lastSuccess<8000;
 function draw(){
@@ -16,10 +16,11 @@ function draw(){
 }
 async function refresh(){
  if(!enabled()){status=null;draw();return;}
- if(!transport||busy){draw();return;}
- const t=transport;
+ if(!transport||busy||polling===transport){draw();return;}
+ const t=transport;polling=t;
  try{const value=await t.request();if(t!==transport||!enabled())return;status=normalizeStatus(value);lastSuccess=Date.now();}
  catch{if(t===transport){status=null;lastSuccess=0;}}
+ finally{if(polling===t)polling=null;}
  draw();
 }
 async function change(role){
