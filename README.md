@@ -43,6 +43,10 @@ The maintenance shortcut works on the designated observer when presentation or l
 
 **Hotbar alternative:** Click **Create director hotbar macro** in the GM Director panel, then drag **Open Stream Director** from the Macros directory to your preferred hotbar slot.
 
+## v0.5.0.2 — Preset preview refresh
+
+Fixes accumulated comparison rows when switching between presets. Each render replaces the previous preview and resets its scroll position. No settings or application policy changes.
+
 ## v0.5.0.1 — Configuration panel polish
 
 Setup & portable presets now uses compact sections and a non-shrinking, scrollable change preview with separate Setting, Current and Proposed columns. Matching presets display a readable no-change message. Import/export controls and diagnostics have clearer grouping. No changes to portable settings schema, saved presets or application policy.

@@ -34,6 +34,7 @@ export function registerConfiguration(ID){
    const format=(key,value)=>{const choices=spec(key)?.choices;if(choices&&Object.hasOwn(choices,String(value)))return String(choices[String(value)]);if(typeof value==="boolean")return value?"Enabled":"Disabled";if(value&&typeof value==="object")return Object.entries(value).map(([name,r])=>name+": "+["x","y","w","h"].map(k=>k.toUpperCase()+" "+Number(r[k]).toFixed(1).replace(/\.0$/,"")+"%").join(", ")).join("\n");return String(value);};
    const previewMessage=text=>{preview.replaceChildren();el("p",text,preview);};
    const renderChanges=changes=>{
+    preview.replaceChildren();preview.scrollTop=0;
     if(!changes.length){previewMessage("Your current settings already match this preset.");return;}
     const grid=el("div",undefined,preview);Object.assign(grid.style,{display:"grid",gridTemplateColumns:"minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1fr)",gap:"0",alignItems:"stretch"});
     const cell=(tag,text,header=false,proposed=false)=>{const n=el(tag,text,grid);Object.assign(n.style,{minWidth:"0",overflowWrap:"anywhere",whiteSpace:"pre-line",padding:"7px 6px",lineHeight:"1.35",fontSize:"0.88rem",borderBottom:"1px solid var(--color-border-light-tertiary, #777)",fontWeight:header||proposed?"600":"400"});return n;};
