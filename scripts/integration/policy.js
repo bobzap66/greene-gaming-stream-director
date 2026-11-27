@@ -47,3 +47,25 @@ export function buildSnapshot({system,sceneId,tokens,user,encounter,mode,healthE
  return {apiVersion:API_VERSION,available:true,system,sceneId,mode,combat:{active:combat.active,round:combat.round,activeActorId:characters.find(c=>c.activeTurn)?.actorId??null},characters};
 }
 export function unavailable(){return {apiVersion:API_VERSION,available:false,system:null,sceneId:null,mode:null,combat:{active:false,round:null,activeActorId:null},characters:[]};}
+
+// GM source is deliberately separate from the observer policy. Only explicitly
+// approved world actors are exported; combat data comes from non-hidden linked
+// character tokens in the active encounter, not from the GM's viewed canvas.
+export function buildGMSnapshot({user,enabled,system,mode,actors=[],roster=[],encounter,healthEnabled}){
+ if(!user?.isGM||!enabled)return unavailable();
+ const approved=new Set(Array.isArray(roster)?roster:[]);
+ const active=!!encounter?.started&&!!encounter?.isActive;
+ const characters=[];
+ for(const actor of actors){
+  if(!approved.has(actor.uuid)||actor.type!=="character"||!actor.hasPlayerOwner)continue;
+  const hp=actor.system?.attributes?.hp;
+  const health=healthEnabled&&finite(hp?.value)&&finite(hp?.max)&&hp.max>0?{value:Math.max(0,hp.value),max:hp.max,temp:finite(hp.temp)?Math.max(0,hp.temp):null}:null;
+  const eligible=active?Array.from(encounter.combatants??[]).filter(c=>c.hidden===false&&c.token?.hidden===false&&c.token?.actorLink===true&&c.actor?.uuid===actor.uuid):[];
+  const turn=eligible.some(c=>c.id===encounter.combatant?.id);
+  characters.push({actorId:actor.id,actorUuid:actor.uuid,tokenId:null,name:actor.name,health,inCombat:eligible.length>0,activeTurn:turn});
+ }
+ characters.sort((a,b)=>a.actorUuid.localeCompare(b.actorUuid));
+ // Do not export scene identifiers, enemy turns, or hidden-only encounters.
+ const publicCombat=characters.some(c=>c.inCombat);
+ return {apiVersion:API_VERSION,available:true,system,sceneId:null,mode,combat:{active:publicCombat,round:publicCombat&&finite(encounter.round)?encounter.round:null,activeActorId:characters.find(c=>c.activeTurn)?.actorId??null},characters};
+}
