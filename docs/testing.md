@@ -32,3 +32,11 @@ Known limitations: relies on native token visibility; enemies outside current vi
 - Reject invalid JSON, unknown keys, unsupported versions, invalid numeric values and out-of-bounds regions without writes.
 - Apply Physical Tabletop only off-stream; verify camera lock and existing calibration are not overwritten. Use the observer's ruler before placing miniatures.
 - Verify Reactive Portraits pairing and combat indicators still work after a preset change and reload.
+
+## v0.5.0.1 configuration panel layout
+
+- Select a matching preset: the preview should show a readable no-change message and Apply should be disabled.
+- Select a different camera style: the preview should show Setting, Current and Proposed in readable columns.
+- Import a substantially different portable backup: verify long previews scroll internally without shrinking, and region values wrap correctly.
+- Resize the settings window vertically and horizontally; verify the outer panel scrolls, controls remain accessible and compact section headings remain readable.
+- Verify custom preset save/delete, export and import controls, diagnostic refresh and applying a reviewed change still function.

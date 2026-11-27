@@ -43,6 +43,10 @@ The maintenance shortcut works on the designated observer when presentation or l
 
 **Hotbar alternative:** Click **Create director hotbar macro** in the GM Director panel, then drag **Open Stream Director** from the Macros directory to your preferred hotbar slot.
 
+## v0.5.0.1 — Configuration panel polish
+
+Setup & portable presets now uses compact sections and a non-shrinking, scrollable change preview with separate Setting, Current and Proposed columns. Matching presets display a readable no-change message. Import/export controls and diagnostics have clearer grouping. No changes to portable settings schema, saved presets or application policy.
+
 ## v0.5.0 — Setup and portable presets
 
 Open **Setup & portable presets** in Stream Director module settings. Choose a dedicated non-GM observer and enable the spectator camera separately. Built-in Tactical, Cinematic, Hybrid and Physical Tabletop presets change only their listed preferences; existing geometry and other tuning remain intact. Review every proposed change before applying. Save current settings as a named world-local preset, export current or selected preferences to JSON, or import a JSON preset in another world and review before applying.
