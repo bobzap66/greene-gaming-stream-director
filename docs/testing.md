@@ -22,3 +22,13 @@ Known limitations: relies on native token visibility; enemies outside current vi
 - Open Integration settings: verify separate GM, observer and shared sections, portrait rows, selection count, Select all and Clear all, and Select active party where available. Bulk changes must not persist until Save settings.
 - Confirm existing approvals survive opening and saving. Observer permission warnings appear only when observer integration and observer roster restriction are enabled.
 - Run the existing GM and observer snapshot tests and check that Reactive Portraits still receives live HP and initiative without re-pairing the extension.
+
+## v0.5.0 portable settings
+
+- Open Setup & portable presets in GM settings; verify observer setup and diagnostics, without writing any setting on open.
+- Export current settings, select Hybrid and review changes without applying. Verify cancel/close preserves current settings.
+- Apply Hybrid, then import the exported backup and apply. Confirm layout regions, presentation and camera preferences restore.
+- Save a named custom preset, reopen the panel, select it, export it and delete it. Import its JSON in another world and verify observer assignment, actor approvals, integration opt-ins, physical width and client calibration remain unchanged.
+- Reject invalid JSON, unknown keys, unsupported versions, invalid numeric values and out-of-bounds regions without writes.
+- Apply Physical Tabletop only off-stream; verify camera lock and existing calibration are not overwritten. Use the observer's ruler before placing miniatures.
+- Verify Reactive Portraits pairing and combat indicators still work after a preset change and reload.

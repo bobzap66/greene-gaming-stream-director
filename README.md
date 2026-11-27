@@ -43,6 +43,12 @@ The maintenance shortcut works on the designated observer when presentation or l
 
 **Hotbar alternative:** Click **Create director hotbar macro** in the GM Director panel, then drag **Open Stream Director** from the Macros directory to your preferred hotbar slot.
 
+## v0.5.0 — Setup and portable presets
+
+Open **Setup & portable presets** in Stream Director module settings. Choose a dedicated non-GM observer and enable the spectator camera separately. Built-in Tactical, Cinematic, Hybrid and Physical Tabletop presets change only their listed preferences; existing geometry and other tuning remain intact. Review every proposed change before applying. Save current settings as a named world-local preset, export current or selected preferences to JSON, or import a JSON preset in another world and review before applying.
+
+Portable files contain camera, presentation, percentage layout regions and tabletop grid preferences, not observer IDs, actor approvals, integration opt-ins, sharing destination, live camera commands, scene bookmarks, physical screen width or client display calibration/positions. Import validates format, values and allowlisted keys before writes; unsupported files are rejected. Failed writes attempt rollback and report any rollback failures. Export current settings before large changes if you want a portable backup. Reload clients when indicated. Diagnostics reflect GM-visible settings and connection state, not observer-local display calibration or the actual OBS output.
+
 ## v0.4.9.1 — Presentation and integration settings polish
 
 Broadcast and Tabletop presentation each have an independent **Automatically dismiss Player Configuration** option, enabled by default when the corresponding presentation is enabled. Only the designated observer's native UserConfig window is closed; no character assignment or user settings are changed. Alt+Shift+U maintenance mode temporarily permits opening this window normally.

@@ -1,3 +1,4 @@
+import {registerConfiguration} from "./configuration/runtime.js";
 export const ID="greene-gaming-stream-director";
 export const defaults={groupDistance:8,padding:2,minZoom:.4,maxZoom:1.5,transition:750,frameMargin:20};
 export const defaultRegions={camera:{x:3,y:15,w:75,h:80},art:{x:5,y:16,w:70,h:76},chat:{x:79,y:15,w:18,h:78},combat:{x:6,y:21,w:18,h:30},reserved:{x:0,y:82,w:100,h:18}};
@@ -70,6 +71,7 @@ export function registerSettings(){
   }catch(e){console.error(ID,"Tabletop preference migration failed",e);}
  });
  registerCategoryMenus();
+ registerConfiguration(ID);
 }
 export const setting=key=>game.settings.get(ID,key);
 export function isObserver(){return !!game.user&&!game.user.isGM&&game.user.id===setting("observerId");}
