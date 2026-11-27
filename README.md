@@ -43,6 +43,12 @@ The maintenance shortcut works on the designated observer when presentation or l
 
 **Hotbar alternative:** Click **Create director hotbar macro** in the GM Director panel, then drag **Open Stream Director** from the Macros directory to your preferred hotbar slot.
 
+## v0.6.0 — Optional OBS production controls
+
+Requires the Reactive Portraits local server with OBS support and Chrome bridge v1.2.0. In OBS, enable Tools → WebSocket Server Settings (default port 4455, authentication recommended). In the local controller select your campaign, open OBS setup, save the connection, refresh scenes and map existing OBS scenes. Repeat for each campaign. Keep the GM portrait API and persistent pairing enabled. In Foundry enable **GM OBS production toolbar**; it appears only on GM clients, with current program scene, streaming/recording state, manual mapped-scene buttons and optional warnings. Collapse the toolbar using its minus button.
+
+Scene changes require explicit confirmation, a connected bridge, the active local campaign and a matching expected program scene. No automatic scene changes, stream/record start/stop, audio changes or automatic artwork transitions are included. Combat on a mapped intro/break scene warns; recording warnings are separately opt-in. Credentials stay on the local computer. Existing OBS scenes and audio automation remain intact. This release does not detect intro-media completion or normal non-combat gameplay resumption.
+
 ## v0.5.0.2 — Preset preview refresh
 
 Fixes accumulated comparison rows when switching between presets. Each render replaces the previous preview and resets its scroll position. No settings or application policy changes.
