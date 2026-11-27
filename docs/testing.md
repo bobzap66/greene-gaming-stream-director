@@ -40,3 +40,9 @@ Known limitations: relies on native token visibility; enemies outside current vi
 - Import a substantially different portable backup: verify long previews scroll internally without shrinking, and region values wrap correctly.
 - Resize the settings window vertically and horizontally; verify the outer panel scrolls, controls remain accessible and compact section headings remain readable.
 - Verify custom preset save/delete, export and import controls, diagnostic refresh and applying a reviewed change still function.
+
+## v0.5.0.2 preview regression
+
+- Switch repeatedly between Tactical, Cinematic, Hybrid and Tabletop without applying. Verify exactly one comparison grid (or matching-preset message), with rows only for the current selection and scroll position reset.
+- Import a different preset, then select a built-in preset. Verify no imported comparison rows remain.
+- Apply a preset and verify the preview updates to the matching-preset message.
