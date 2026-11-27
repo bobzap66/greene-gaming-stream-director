@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {presentationCSS,combatRows,contentKind,openJournalApplications,applicationElement} from "../scripts/presentation/policy.js";
+import {presentationCSS,combatRows,contentKind,openJournalApplications,applicationElement,isUserConfiguration,openUserConfigurations} from "../scripts/presentation/policy.js";
 test("disabled presentation emits no CSS",()=>assert.equal(presentationCSS({enabled:false,presentationPause:true}),""));
 test("selected interface elements hidden without hiding canvas or entire sidebar",()=>{
  const css=presentationCSS({enabled:true,presentationChat:true,presentationPause:true,presentationHotbar:true});
@@ -51,4 +51,14 @@ test("native journal form is not unwrapped to its indexed button",()=>{
  assert.deepEqual(openJournalApplications(new Map([[1,app]])),[app]);
  assert.equal(applicationElement({element:[form]}),form);
  assert.equal(applicationElement({element:null}),null);
+});
+
+test("Player Configuration detection only accepts native class instances",()=>{
+ class UserConfig{constructor(connected=true){this.element={matches:()=>false,isConnected:connected};}close(){}}
+ const config=new UserConfig(),detached=new UserConfig(false),other={element:config.element,close(){}};
+ assert.equal(isUserConfiguration(config,UserConfig),true);
+ assert.equal(isUserConfiguration(other,UserConfig),false);
+ assert.equal(isUserConfiguration(config,undefined),false);
+ assert.deepEqual(openUserConfigurations(new Map([[1,config],[2,detached],[3,other]]),UserConfig),[config]);
+ assert.deepEqual(openUserConfigurations(undefined,UserConfig),[]);
 });
