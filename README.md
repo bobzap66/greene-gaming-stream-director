@@ -43,6 +43,10 @@ The maintenance shortcut works on the designated observer when presentation or l
 
 **Hotbar alternative:** Click **Create director hotbar macro** in the GM Director panel, then drag **Open Stream Director** from the Macros directory to your preferred hotbar slot.
 
+## v0.6.0.1 — OBS production polish
+
+Optional Standby (Starting Soon without music/countdown) and Technical Difficulties mappings are available in the updated local Reactive Portraits controller. Only mapped roles appear in the GM toolbar; last known mappings remain visible but disabled during disconnection. Gameplay transitions from either pre-game scene, Break, Technical Difficulties or Ending retain microphone-safety confirmation. Combat warnings cover Standby and Technical Difficulties too, and remain visible while collapsed. Drag the toolbar header to move it; position and collapsed state are stored per GM/world in the browser. Configure optional unassigned OBS scene shortcuts through Foundry Configure Controls. No automation or stream/record controls added. Chrome bridge v1.2.0 remains compatible.
+
 ## v0.6.0 — Optional OBS production controls
 
 Requires the Reactive Portraits local server with OBS support and Chrome bridge v1.2.0. In OBS, enable Tools → WebSocket Server Settings (default port 4455, authentication recommended). In the local controller select your campaign, open OBS setup, save the connection, refresh scenes and map existing OBS scenes. Repeat for each campaign. Keep the GM portrait API and persistent pairing enabled. In Foundry enable **GM OBS production toolbar**; it appears only on GM clients, with current program scene, streaming/recording state, manual mapped-scene buttons and optional warnings. Collapse the toolbar using its minus button.
