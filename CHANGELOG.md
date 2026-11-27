@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.0.1
+
+- Standby and Technical Difficulties production roles; mapped-only toolbar, draggable persistent position, collapsed-state persistence and configurable shortcuts.
+- Immediate enable callback and persistent visual production warnings.
+
 ## 0.6.0
 
 - Optional GM OBS production toolbar and manual mapped scene controls through Reactive Portraits bridge v1.2.0.
