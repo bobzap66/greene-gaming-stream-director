@@ -1,4 +1,4 @@
-import {portableKeys,presets,exportSettings,makeDocument,parseDocument,changesFor,applyChanges} from "./policy.js";
+import {presets,exportSettings,makeDocument,parseDocument,changesFor,applyChanges} from "./policy.js";
 export function registerConfiguration(ID){
  const read=k=>game.settings.get(ID,k),spec=k=>game.settings.settings.get(ID+"."+k),write=(k,v)=>game.settings.set(ID,k,v);
  game.settings.register(ID,"customPresets",{name:"Custom configuration presets",scope:"world",config:false,type:Object,default:[],requiresReload:false});
@@ -30,9 +30,10 @@ export function registerConfiguration(ID){
    const description=el("p"),preview=el("div");Object.assign(preview.style,{maxHeight:"230px",overflowY:"auto",border:"1px solid var(--color-border-light-tertiary, #777)",padding:"8px"});
    let selected=null,busy=false;
    const apply=button("Apply reviewed changes",async()=>{if(busy||!selected||!game.user?.isGM)return;busy=true;apply.disabled=true;try{
-    const changes=changesFor(selected.settings,read,spec);if(!changes.length)return;
-    await applyChanges(changes,write);ui.notifications.info(changes.some(c=>c.reload)?"Preset applied. Reload GM and observer clients.":"Preset applied.");show(selected);diagnostics();
-   }catch(e){ui.notifications.error(e.message);show(selected);}finally{busy=false;apply.disabled=!selected||!changesFor(selected.settings,read,spec).length;}});
+    const doc=selected;const changes=changesFor(doc.settings,read,spec);if(!changes.length)return;
+    picker.disabled=true;file.disabled=true;
+    await applyChanges(changes,write);ui.notifications.info(changes.some(c=>c.reload)?"Preset applied. Reload GM and observer clients.":"Preset applied.");show(doc);diagnostics();
+   }catch(e){ui.notifications.error(e.message);show(selected);}finally{busy=false;picker.disabled=false;file.disabled=false;if(selected)show(selected);else apply.disabled=true;}});
    const show=doc=>{selected=doc;preview.replaceChildren();try{const changes=changesFor(doc.settings,read,spec);description.textContent=doc.name+" — "+changes.length+" setting(s) will change.";if(!changes.length)el("p","Already matches current settings.",preview);for(const c of changes){const line=el("div",undefined,preview);el("strong",spec(c.key).name,line);el("div",JSON.stringify(c.previous)+" → "+JSON.stringify(c.value),line).style.overflowWrap="anywhere";}apply.disabled=busy||!changes.length;}catch(e){selected=null;description.textContent=e.message;apply.disabled=true;}};
    const saved=()=>Array.isArray(read("customPresets"))?read("customPresets"):[];
    function reloadPicker(){picker.replaceChildren();for(const [k,p] of Object.entries(presets))option(picker,"builtin:"+k,p.label);saved().forEach((p,i)=>option(picker,"custom:"+i,p.name));}
