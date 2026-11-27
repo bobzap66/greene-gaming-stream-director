@@ -5,7 +5,7 @@ let pending=null,last=null;
 const active=()=>game.ready&&isObserver()&&setting("integrationEnabled");
 function snapshot(){
  if(!active()||!canvas.ready||!canvas.scene)return unavailable();
- return buildSnapshot({system:game.system.id,sceneId:canvas.scene.id,tokens:Array.from(canvas.tokens.placeables??[]),user:game.user,encounter:game.combat,mode:setting("observerMode"),healthEnabled:setting("integrationHealth")});
+ return buildSnapshot({system:game.system.id,sceneId:canvas.scene.id,tokens:Array.from(canvas.tokens.placeables??[]),user:game.user,encounter:game.combat,mode:setting("observerMode"),healthEnabled:setting("integrationHealth"),roster:setting("integrationRosterOnly")?setting("integrationRoster"):null,actors:setting("integrationRosterOnly")?Array.from(game.actors):[]});
 }
 function deliver(callback,value){
  try{callback(structuredClone(value));}catch(e){console.warn(ID,"Integration subscriber failed",e);}
@@ -38,7 +38,7 @@ export function registerIntegration(){
   Hooks.callAll("ggsdIntegrationReady",module?.api?.integration);
   schedule();
  });
- for(const event of ["canvasReady","updateActor","updateToken","createToken","deleteToken","updateCombat","createCombat","deleteCombat","updateCombatant","createCombatant","deleteCombatant","combatTurnChange","sightRefresh","createItem","updateItem","deleteItem","createActiveEffect","updateActiveEffect","deleteActiveEffect"])Hooks.on(event,schedule);
+ for(const event of ["canvasReady","createActor","deleteActor","updateActor","updateToken","createToken","deleteToken","updateCombat","createCombat","deleteCombat","updateCombatant","createCombatant","deleteCombatant","combatTurnChange","sightRefresh","createItem","updateItem","deleteItem","createActiveEffect","updateActiveEffect","deleteActiveEffect"])Hooks.on(event,schedule);
  Hooks.on("canvasTearDown",()=>{if(!subscribers.size)return;clearTimeout(pending);pending=null;publish(unavailable());});
- Hooks.on("updateSetting",doc=>{if([ID+".integrationEnabled",ID+".integrationHealth",ID+".observerId",ID+".observerMode"].includes(doc?.key))schedule();});
+ Hooks.on("updateSetting",doc=>{if([ID+".integrationEnabled",ID+".integrationHealth",ID+".integrationRosterOnly",ID+".integrationRoster",ID+".observerId",ID+".observerMode"].includes(doc?.key))schedule();});
 }
