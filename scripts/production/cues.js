@@ -35,9 +35,10 @@ function playerDraw(){
  if(game.user?.isGM)return;
  const packet=setting("obsPublicCue"),v=packet?.view;
  const allowed=setting("obsProductionEnabled")&&(isObserver()?setting("obsCueObserver"):setting("obsCuePlayers"));
- if(!allowed||!v||!Number.isFinite(packet.expires)||Date.now()>packet.expires){panel?.remove();panel=null;return;}
+ if(!allowed||!v||!["standby","intro","break","technical"].includes(v.kind)||!Number.isFinite(packet.expires)||Date.now()>packet.expires){panel?.remove();panel=null;return;}
  if(!panel){panel=document.createElement("aside");panel.id="ggsd-player-production-cue";Object.assign(panel.style,{position:"fixed",top:"65px",left:"50%",transform:"translateX(-50%)",zIndex:"90",background:"#19212c",color:"#fff",padding:"12px 24px",border:"1px solid #bda66b",borderRadius:"7px",textAlign:"center",pointerEvents:"none",minWidth:"190px"});panel.setAttribute("role","status");document.body.append(panel);}
  const remaining=Number.isFinite(v.deadline)?Math.max(0,v.deadline-Date.now()):null;
+ const displaySignature=v.label+"|"+(remaining===null?"wait":formatDuration(remaining));if(panel.dataset.signature===displaySignature)return;panel.dataset.signature=displaySignature;
  panel.textContent="";
  const title=document.createElement("div");title.textContent=v.label;title.style.color="#e0cd9a";panel.append(title);
  const time=document.createElement("strong");time.style.fontSize="24px";time.style.fontVariantNumeric="tabular-nums";time.textContent=remaining===null?"Please stand by":remaining===0?"Waiting for GM":formatDuration(remaining);panel.append(time);
