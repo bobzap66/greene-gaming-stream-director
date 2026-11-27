@@ -24,8 +24,8 @@ export function validateValue(key,value,spec){
  if(spec.type===Boolean&&typeof value==="boolean")return value;
  if(spec.type===String&&typeof value==="string"&&(!spec.choices||Object.hasOwn(spec.choices,value)))return value;
  if(spec.type===Number&&finite(value)){
-  const {min,max,step}=spec.range??{};
-  if((finite(min)&&value<min)||(finite(max)&&value>max)||(finite(step)&&step>0&&Math.abs((value-(min??0))/step-Math.round((value-(min??0))/step)>1e-6)||(spec.choices&&!Object.hasOwn(spec.choices,String(value))))throw Error("Invalid value for "+key);
+  const {min,max}=spec.range??{};
+  if((finite(min)&&value<min)||(finite(max)&&value>max)||(spec.choices&&!Object.hasOwn(spec.choices,String(value))))throw Error("Invalid value for "+key);
   return value;
  }
  if(spec.type===Object&&(key==="regions"||key==="tabletopRegions")&&plain(value)){
