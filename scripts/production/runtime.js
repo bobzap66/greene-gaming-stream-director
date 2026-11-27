@@ -27,7 +27,7 @@ function draw(){
  root.querySelector("[data-obs-empty]").hidden=mapped.size>0;
  root.querySelector("[data-obs-empty]").textContent=s?"No production roles mapped.":"Waiting for scene mappings.";
  if(warning&&warning!==lastWarning)ui.notifications.warn("Stream Director: "+warning);lastWarning=warning;
- for(const b of root.querySelectorAll("[data-obs-role]")){const role=b.dataset.obsRole;b.hidden=!mapped.has(role);b.style.display=mapped.has(role)?"":"none";b.disabled=busy||!s?.connected||!s.active||!s.mappings[role]||s.mappings[role]===s.scene;b.title=s?.mappings[role]||"Not mapped";b.classList.toggle("active",!!s?.connected&&s.scene===s.mappings[role]);}
+ for(const b of root.querySelectorAll("[data-obs-role]")){const role=b.dataset.obsRole;b.hidden=!mapped.has(role);b.style.display=mapped.has(role)?"":"none";b.disabled=busy||!s?.connected||!s.active||!s.mappings[role]||s.mappings[role]===s.scene;b.title=(s||lastMappings)?.mappings[role]||"Not mapped";const active=!!s?.connected&&s.scene===s.mappings[role];b.classList.toggle("active",active);b.setAttribute("aria-pressed",String(active));b.style.outline=active?"2px solid #63b98e":"";}
 }
 async function refresh(){
  if(!enabled()){status=null;draw();return;}
@@ -44,7 +44,7 @@ async function change(role){
  if(role==="gameplay"&&protectedScene(status)){
   if(!confirm("Switch OBS from "+expectedScene+" to "+scene+"? Confirm players are ready and microphones are safe."))return;
  }else if(!confirm("Switch OBS to "+scene+"?"))return;
- if(t!==transport||!fresh()||status.scene!==expectedScene)return;
+ if(!enabled()||t!==transport||!fresh()||!status.active||status.scene!==expectedScene||status.mappings[role]!==scene)return;
  busy=true;draw();
  try{const value=await t.request({role,expectedScene});if(t===transport&&enabled())accept(value);}
  catch(e){ui.notifications.warn("OBS: "+e.message);}
