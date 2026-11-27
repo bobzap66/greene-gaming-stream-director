@@ -28,3 +28,20 @@ test("unsupported health and unavailable snapshots fail closed",()=>{
  assert.equal(snapshot({tokens:[{...token,actor:{...actor,system:{}}}]}).characters[0].health,null);
  assert.deepEqual(unavailable().characters,[]);assert.equal(unavailable().available,false);
 });
+
+test("approved off-scene actor retains health but no token or turn",()=>{
+ const s=snapshot({tokens:[],actors:[actor],roster:[actor.uuid]});
+ assert.equal(s.characters.length,1);assert.equal(s.characters[0].tokenId,null);
+ assert.equal(s.characters[0].activeTurn,false);assert.equal(s.characters[0].health.value,24);
+});
+test("approved roster filters visible characters and empty roster exports none",()=>{
+ assert.deepEqual(snapshot({roster:[],actors:[actor]}).characters,[]);
+ assert.deepEqual(snapshot({roster:["Actor.other"],actors:[actor]}).characters,[]);
+});
+test("approved hidden token does not disclose token or turn",()=>{
+ const s=snapshot({tokens:[{...token,document:{hidden:true}}],actors:[actor],roster:[actor.uuid]});
+ assert.equal(s.characters[0].tokenId,null);assert.equal(s.combat.activeActorId,null);
+});
+test("approved actor still needs observer permission",()=>{
+ assert.deepEqual(snapshot({tokens:[],actors:[{...actor,testUserPermission:()=>false}],roster:[actor.uuid]}).characters,[]);
+});
