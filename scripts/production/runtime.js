@@ -1,7 +1,7 @@
 import {registerCues,drawCues} from "./cues.js";
 import {ID,setting} from "../settings.js";
 import {roles,normalizeStatus,productionWarning,protectedScene,mappedRoles} from "./policy.js";
-let transport=null,status=null,root=null,interval=null,busy=false,polling=null,lastWarning=null,lastSuccess=0,lastMappings=null;
+let transport=null,status=null,root=null,interval=null,busy=false,polling=null,lastWarning=null,lastSuccess=0,lastMappings=null,drawInterval=null,choosing=false;
 const enabled=()=>game.ready&&game.user?.isGM&&setting("obsProductionEnabled");
 const fresh=()=>status&&Date.now()-lastSuccess<8000;
 const layoutKey=()=>ID+":production-layout:"+game.world.id+":"+game.user.id;
@@ -23,7 +23,7 @@ function draw(){
  drawCues(cueStatus,root.querySelector('[data-obs-cue]'));
  const tools=root.querySelector('[data-break-tools]'),timer=s?.cue?.breakTimer;
  tools.hidden=!(setting("obsBreakEnabled")&&s?.active&&s.connected&&s.scene===s.mappings.break&&timer);
- for(const b of tools.querySelectorAll("button")){const a=b.dataset.action;b.disabled=busy||(a==="pause"&&!(timer?.mode==="running"&&timer.remainingMs>0))||(a==="resume"&&timer?.mode!=="paused")||(a==="extend"&&timer?.mode==="indefinite");b.hidden=(a==="pause"&&timer?.mode==="paused")||(a==="resume"&&timer?.mode!=="paused");}
+ for(const b of tools.querySelectorAll("button")){const a=b.dataset.action;b.disabled=busy||(a==="end"&&!s?.mappings.gameplay)||(a==="pause"&&!(timer?.mode==="running"&&timer.remainingMs>0))||(a==="resume"&&timer?.mode!=="paused")||(a==="extend"&&timer?.mode==="indefinite");b.hidden=(a==="pause"&&timer?.mode==="paused")||(a==="resume"&&timer?.mode!=="paused");}
  root.querySelector("[data-obs-status]").textContent=!s?"OBS bridge waiting":!s.enabled?"OBS disabled locally":!s.connected?"OBS disconnected":!s.active?"OBS • another campaign selected":(s.streaming?"LIVE":"Not live")+" · "+(s.recording?"REC":"Not recording");
  root.querySelector("[data-obs-scene]").textContent=s?.connected?s.scene||"Unknown scene":"No current scene";
  const warning=setting("obsProductionWarnings")?productionWarning(s,{combat:!!game.combat?.started&&!!game.combat?.isActive,expectRecording:setting("obsExpectRecording")}):null;
@@ -46,6 +46,7 @@ async function refresh(){
  draw();
 }
 function chooseBreak(){
+ if(choosing)return Promise.resolve(undefined);choosing=true;
  return new Promise(resolve=>{
   const dialog=document.createElement("dialog");Object.assign(dialog.style,{background:"#19212c",color:"#eee",padding:"20px",border:"1px solid #bda66b",borderRadius:"8px",minWidth:"280px"});
   const title=document.createElement("h3");title.textContent="Start intermission";
@@ -53,18 +54,18 @@ function chooseBreak(){
   select.value="10";const custom=document.createElement("input");custom.type="number";custom.min="1";custom.max="120";custom.step="1";custom.value="10";custom.hidden=true;select.onchange=()=>{custom.hidden=select.value!=="custom";};
   const start=document.createElement("button"),cancel=document.createElement("button");start.textContent="Start Break";cancel.textContent="Cancel";start.type=cancel.type="button";
   let result;start.onclick=()=>{const n=select.value==="none"?null:Number(select.value==="custom"?custom.value:select.value);if(n!==null&&(!Number.isInteger(n)||n<1||n>120)){ui.notifications.warn("Choose 1–120 minutes.");return;}result=n;dialog.close();};cancel.onclick=()=>dialog.close();
-  dialog.addEventListener("close",()=>{dialog.remove();resolve(result);},{once:true});dialog.append(title,select,custom,start,cancel);document.body.append(dialog);dialog.showModal();
+  dialog.addEventListener("close",()=>{dialog.remove();choosing=false;resolve(result);},{once:true});dialog.append(title,select,custom,start,cancel);document.body.append(dialog);dialog.showModal();
  });
 }
 async function adjustBreak(action,minutes){
- if(busy||!enabled()||!fresh()||!status?.active||!status.connected||status.scene!==status.mappings.break||!status.cue?.id||!transport)return;
+ if(busy||choosing||!enabled()||!fresh()||!status?.active||!status.connected||status.scene!==status.mappings.break||!status.cue?.id||!transport)return;
  const t=transport,expectedScene=status.scene,cueId=status.cue.id;
  if(action==="start"){minutes=await chooseBreak();if(minutes===undefined)return;}
  if(t!==transport||!fresh()||status?.cue?.id!==cueId||!enabled())return;
  busy=true;draw();try{const v=await t.request({breakAction:action,minutes,expectedScene,cueId});if(t===transport&&enabled())accept(v);}catch(e){ui.notifications.warn("OBS: "+e.message);}finally{busy=false;await refresh();}
 }
 async function change(role){
- if(!enabled()||busy||!transport||!fresh()||!status.connected||!status.active||!status.mappings[role])return;
+ if(!enabled()||busy||choosing||!transport||!fresh()||!status.connected||!status.active||!status.mappings[role])return;
  const expectedScene=status.scene,scene=status.mappings[role],t=transport;
  let breakMinutes;
  if(role==="break"&&setting("obsBreakEnabled")){breakMinutes=await chooseBreak();if(breakMinutes===undefined)return;}
@@ -102,7 +103,7 @@ function mount(){
  if(Number.isFinite(layout.x)&&Number.isFinite(layout.y))clampPosition(layout.x,layout.y);
  window.addEventListener("resize",resize);
 }
-function sync(){if(!enabled()){if(game.ready&&game.user?.isGM)drawCues(null,null);root?.remove();root=null;window.removeEventListener("resize",resize);clearInterval(interval);interval=null;status=null;lastMappings=null;lastWarning=null;return;}mount();if(interval===null)interval=setInterval(()=>void refresh(),2500);void refresh();}
+function sync(){if(!enabled()){if(game.ready&&game.user?.isGM)drawCues(null,null);root?.remove();root=null;window.removeEventListener("resize",resize);clearInterval(interval);interval=null;clearInterval(drawInterval);drawInterval=null;status=null;lastMappings=null;lastWarning=null;return;}mount();if(interval===null)interval=setInterval(()=>void refresh(),2500);if(drawInterval===null)drawInterval=setInterval(draw,500);void refresh();}
 export function registerProduction(){
  registerCues();
  game.settings.register(ID,"obsProductionEnabled",{name:"Enable GM OBS production toolbar",hint:"Requires Reactive Portraits OBS setup and paired Chrome extension. GM-only; never starts streams or recordings.",scope:"world",config:true,type:Boolean,default:false,requiresReload:false,onChange:()=>{if(game.ready)sync();}});
