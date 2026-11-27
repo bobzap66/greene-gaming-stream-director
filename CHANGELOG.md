@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.0
+
+- Optional GM OBS production toolbar and manual mapped scene controls through Reactive Portraits bridge v1.2.0.
+- Current program, streaming and recording status, opt-in production warnings; no automatic switching or broadcast start/stop.
+
 ## 0.2.0 — development build
 - Observer selection and camera configuration.
 - Optional broadcast layout editor, local overlay reference and safe-area geometry.
