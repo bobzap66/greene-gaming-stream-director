@@ -222,3 +222,6 @@ For temporary observer UI access, press Alt+Shift+U. For a full rollback, disabl
 ## Development
 
 Run `npm test` for pure geometry tests. Foundry integration requires a live test world.
+
+## v0.6.1 — Production cues
+Enable adjustable OBS break timer in Foundry module settings. Click Break and choose 5, 10, 15, 20, custom (1–120 minutes), or indefinite. A confirmed OBS transition starts the shared timer; manual OBS entry starts indefinite. During the break use Set timer, +1 min, +5 min, Pause/Resume or End Break (manual gameplay confirmation). Expiry never switches scenes. Player notices and observer notices are separate opt-ins. Intro cues require explicit countdown and final-completion signals from OBS automation; zero alone is not completion. Optional GM audio requires a browser interaction and may be captured by desktop audio. Update Reactive Portraits and reload bridge v1.3.0; existing pairings remain. Timers cancel on scene changes or OBS disconnection. Public notices expire if the GM bridge is unavailable.
