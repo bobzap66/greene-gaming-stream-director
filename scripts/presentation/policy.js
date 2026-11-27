@@ -48,3 +48,12 @@ export function openJournalApplications(instances){
   return el?.isConnected===true&&contentKind(el)==="journal"&&typeof app.close==="function";
  });
 }
+
+ // Match the native v14 UserConfig class, not window titles or arbitrary forms.
+export function isUserConfiguration(app,UserConfig){
+ return typeof UserConfig==="function"&&app instanceof UserConfig&&typeof app.close==="function";
+}
+export function openUserConfigurations(instances,UserConfig){
+ if(typeof instances?.values!=="function")return [];
+ return Array.from(instances.values()).filter(app=>isUserConfiguration(app,UserConfig)&&applicationElement(app)?.isConnected===true);
+}

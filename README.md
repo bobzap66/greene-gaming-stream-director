@@ -43,6 +43,12 @@ The maintenance shortcut works on the designated observer when presentation or l
 
 **Hotbar alternative:** Click **Create director hotbar macro** in the GM Director panel, then drag **Open Stream Director** from the Macros directory to your preferred hotbar slot.
 
+## v0.4.9.1 — Presentation and integration settings polish
+
+Broadcast and Tabletop presentation each have an independent **Automatically dismiss Player Configuration** option, enabled by default when the corresponding presentation is enabled. Only the designated observer's native UserConfig window is closed; no character assignment or user settings are changed. Alt+Shift+U maintenance mode temporarily permits opening this window normally.
+
+Integration settings group GM, observer and shared preferences separately. The approved character roster displays portrait rows, selection counts, Select all, Clear all and Select active party when the game system exposes compatible active-party members. Observer permission warnings appear only when the observer API is enabled and restricted to the roster. Existing approvals, API contracts and Reactive Portraits pairing are unchanged.
+
 ## v0.4.9 — Approved portrait roster
 
 Integration settings optionally restrict the API to an explicitly selected world-actor roster. Select characters, enable roster mode, and grant the designated observer Observer permission. Approved off-scene or unseen characters retain health data; their token ID is null and hidden/off-scene combatants never receive turn indicators. The original visible-token mode remains the default. Camera visibility rules are unchanged.

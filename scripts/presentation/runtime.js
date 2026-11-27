@@ -1,6 +1,6 @@
 import {ID,setting,modeSetting,isObserver} from "../settings.js";
 import {maintenanceActive} from "./maintenance.js";
-import {hideRules,presentationCSS,combatRows,contentKind,openJournalApplications,applicationElement} from "./policy.js";
+import {hideRules,presentationCSS,combatRows,contentKind,openJournalApplications,applicationElement,isUserConfiguration,openUserConfigurations} from "./policy.js";
 const showChat=()=>setting("observerMode")==="tabletop"?setting("tabletopShowChat"):modeSetting("presentationChat");
 const showCombat=()=>setting("observerMode")==="tabletop"?setting("tabletopShowCombat"):modeSetting("presentationCombat");
 let heartbeat=null;
@@ -8,6 +8,17 @@ let style,queued=false,busy=false,ownedCombat=null,chatActivated=false;
 const timers=new Map();
 const closing=new Set();
 const enabled=()=>game.ready&&isObserver()&&!maintenanceActive()&&modeSetting("presentationEnabled");
+const userConfigEnabled=()=>enabled()&&modeSetting("presentationDismissUserConfig");
+const userConfigClass=()=>foundry.applications.sheets?.UserConfig;
+function dismissUserConfig(app){
+ if(!userConfigEnabled()||!isUserConfiguration(app,userConfigClass())||closing.has(app))return;
+ if(applicationElement(app)?.isConnected!==true)return;
+ closing.add(app);
+ // Wait until the current rendering hook has completed before closing.
+ Promise.resolve().then(()=>{
+  if(userConfigEnabled()&&isUserConfiguration(app,userConfigClass())&&applicationElement(app)?.isConnected===true)return app.close();
+ }).catch(e=>console.warn(ID,"Automatic Player Configuration dismissal failed",e)).finally(()=>closing.delete(app));
+}
 function clearTimers(){for(const timer of timers.values())clearTimeout(timer);timers.clear();}
 function dismiss(app){
  if(!enabled()||!app||typeof app.close!=="function"||closing.has(app))return;
@@ -41,6 +52,7 @@ async function reconcile(){
  if(busy){schedule();return;}busy=true;
  try{
   const on=enabled();
+  if(userConfigEnabled())for(const app of openUserConfigurations(foundry.applications.instances,userConfigClass()))dismissUserConfig(app);
   if(on&&modeSetting("presentationDismissJournal")){
    for(const app of openJournalApplications(foundry.applications.instances))dismiss(app);
   }
@@ -73,7 +85,7 @@ async function reconcile(){
 }
 function schedule(){if(!game.ready||(!enabled()&&!ownedCombat&&!timers.size&&!style?.textContent)||queued)return;queued=true;requestAnimationFrame(()=>{queued=false;reconcile();});}
 export function registerPresentation(){
- for(const event of ["renderApplication","renderApplicationV2"])Hooks.on(event,app=>{dismiss(app);if(enabled())schedule();});
+ for(const event of ["renderApplication","renderApplicationV2"])Hooks.on(event,app=>{dismissUserConfig(app);dismiss(app);if(enabled())schedule();});
  for(const event of ["closeApplication","closeApplicationV2"])Hooks.on(event,clearApp);
  for(const event of ["updateCombat","createCombat","deleteCombat","updateCombatant","createCombatant","deleteCombatant","combatTurnChange","canvasReady","updateSetting","ggsdMaintenanceChanged"])Hooks.on(event,schedule);
  let priorMode;
