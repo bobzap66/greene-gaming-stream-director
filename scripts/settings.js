@@ -51,6 +51,7 @@ export function registerSettings(){
   register(target,{name:spec.name.replace(/^Broadcast: /,"").replace(/broadcast/gi,"tabletop"),hint:spec.hint,type,range,choices,default:value,requiresReload:false});
  }
  register("integrationEnabled",{name:"Enable observer integration API",hint:"Allow local integrations to read approved visible player-character state on the designated observer only. Does not transmit data to external services.",type:Boolean,default:false,requiresReload:false});
+ register("integrationGMEnabled",{name:"Enable GM portrait integration API",hint:"Allow the GM browser to export only explicitly approved roster characters. Independent of the observer API; no observer permissions required.",type:Boolean,default:false,requiresReload:false});
  register("integrationRosterOnly",{name:"Use approved character roster",hint:"Export only explicitly selected player characters, including those off the current scene. Observer permission is still required.",type:Boolean,default:false,requiresReload:false});
  register("integrationRoster",{name:"Approved character UUIDs",type:Object,default:[],config:false,requiresReload:false});
  register("integrationHealth",{name:"Include character health",hint:"Allow approved integrations to read current, maximum and temporary HP. Leave off if overlays should not display health.",type:Boolean,default:false,requiresReload:false});
@@ -82,7 +83,7 @@ const groups={
  "Tabletop presentation":["tabletopShowChat","tabletopShowCombat",...Object.values(modeKeys).filter(k=>k.startsWith("tabletopPresentation"))],
  Bookmarks:["bookmarkHold","bookmarkIndefinite"],
  Sharing:["sharingDestination"],
- Integration:["integrationEnabled","integrationHealth","integrationRosterOnly"]
+ Integration:["integrationGMEnabled","integrationEnabled","integrationHealth","integrationRosterOnly"]
 };
 function registerCategoryMenus(){
  const {ApplicationV2}=foundry.applications.api;
@@ -112,7 +113,7 @@ function registerCategoryMenus(){
      const saved=setting("integrationRoster"),observer=game.users.get(setting("observerId"));
      for(const actor of Array.from(game.actors).filter(a=>a.type==="character"&&a.hasPlayerOwner).sort((a,b)=>a.name.localeCompare(b.name))){
       const row=document.createElement("label");row.className="form-group";const check=document.createElement("input");check.type="checkbox";check.checked=saved.includes(actor.uuid);
-      row.append(check,document.createTextNode(actor.name+(observer&&actor.testUserPermission(observer,"OBSERVER")?"":" — observer permission required")));root.append(row);selected.set(actor.uuid,check);
+      row.append(check,document.createTextNode(actor.name+(observer&&actor.testUserPermission(observer,"OBSERVER")?"":" — observer API permission required")));root.append(row);selected.set(actor.uuid,check);
      }
     }
     const save=document.createElement("button");save.type="button";save.textContent="Save settings";
