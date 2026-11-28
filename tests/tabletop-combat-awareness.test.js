@@ -23,11 +23,11 @@ test("skips defeated combatants only when configured",()=>{
 test("never names hidden, invisible or off-scene combatants or jumps over hidden upcoming turns",()=>{
  const a=turn("a","Fighter"),c=turn("c","Wizard");
  for(const b of [turn("b","Secret",{hidden:true}),turn("b","Secret",{isHidden:true}),turn("b","Secret",{visible:false}),turn("b","Secret",{sceneId:"other"})]){
-  assert.deepEqual(combatAwareness(fixture([a,b,c])),{current:"Fighter",next:null,round:2});
-  assert.equal(combatAwareness(fixture([a,b,c],1)).current,null);
+  assert.deepEqual(combatAwareness(fixture([a,b,c])),{current:"Fighter",next:"Hidden Combatant",round:2});
+  assert.equal(combatAwareness(fixture([a,b,c],1)).current,"Hidden Combatant");
  }
  for(const t of [token("b",{isVisible:false}),token("b",{document:{hidden:true,parent:{id:"s"}}}),token("b",{document:{hidden:false,parent:{id:"other"}}})]){
-  assert.equal(combatAwareness(fixture([a,turn("b","Secret"),c],0,{},[token("a"),t,token("c")])).next,null);
+  assert.equal(combatAwareness(fixture([a,turn("b","Secret"),c],0,{},[token("a"),t,token("c")])).next,"Hidden Combatant");
  }
  assert.deepEqual(combatAwareness({...fixture([a,c]),canReadName:()=>false}),{current:"Creature",next:"Creature",round:2});
 });
@@ -35,8 +35,8 @@ test("tokenless character entries require observer permission and an explicitly 
  const a=turn("a","Physical PC",{tokenId:null,actor:{type:"character",testUserPermission:()=>true}});
  const b=turn("b","Fighter");
  assert.equal(combatAwareness(fixture([a,b])).current,"Physical PC");
- assert.equal(combatAwareness(fixture([{...a,actor:{type:"character",testUserPermission:()=>false}},b])).current,null);
- assert.equal(combatAwareness(fixture([a,b],0,{scene:null})).current,null);
+ assert.equal(combatAwareness(fixture([{...a,actor:{type:"character",testUserPermission:()=>false}},b])).current,"Hidden Combatant");
+ assert.equal(combatAwareness(fixture([a,b],0,{scene:null})).current,"Hidden Combatant");
 });
 test("inactive, unrelated or wholly hidden encounters are suppressed",()=>{
  const a=turn("a","Fighter"),f=fixture([a]);
