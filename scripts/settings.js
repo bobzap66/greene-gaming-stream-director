@@ -22,6 +22,9 @@ export function registerSettings(){
  register("tabletopGridInches",{name:"Tabletop: physical grid size (inches)",type:Number,default:1,range:{min:.5,max:2,step:.05},requiresReload:false});
  register("tabletopShowChat",{name:"Tabletop: show chat",type:Boolean,default:false,requiresReload:false});
  register("tabletopShowCombat",{name:"Tabletop: show combat tracker",type:Boolean,default:false,requiresReload:false});
+ register("tabletopInitiativeEnabled",{name:"Tabletop: show turn, on-deck and round indicators",hint:"Read-only initiative panels on the designated tabletop display. Hidden combatants are not identified.",type:Boolean,default:false,requiresReload:false});
+ register("tabletopInitiativePosition",{name:"Tabletop initiative display sides",type:String,default:"four",choices:{four:"All four sides (outward facing)",mirrored:"Opposite sides (top and bottom)",bottom:"Bottom only",top:"Top only"},requiresReload:false});
+ register("tabletopInitiativeSize",{name:"Tabletop initiative text size (pixels)",type:Number,default:28,range:{min:14,max:48,step:2},requiresReload:false});
  register("enabled",{name:"Enable spectator camera",hint:"Automatically direct the designated observer camera in Broadcast mode or lock its physical scale and position in Tabletop mode.",type:Boolean,default:false});
  const specs={groupDistance:["Party grouping distance (grid squares)",2,24,1],padding:["Camera padding without layout (grid squares)",0,8,1],minZoom:["Legacy minimum zoom (safe-area fit takes priority)",.1,2,.1],maxZoom:["Maximum zoom",.5,3,.1],transition:["Transition duration (ms)",100,2000,50],frameMargin:["Safe-area framing margin (% of group bounds)",0,60,5]};
  for(const [key,[name,min,max,step]] of Object.entries(specs))register(key,{name,type:Number,default:defaults[key],range:{min,max,step}});
@@ -82,7 +85,7 @@ const groups={
  Broadcast:["presentationEnabled",...Object.keys(modeKeys).filter(k=>k.startsWith("presentation")&&k!=="presentationEnabled")],
  "Broadcast layout":["layoutEnabled","artEnabled","chatEnabled","combatEnabled","chatScale"],
  Tabletop:["tabletopWidth","tabletopGridInches","tabletopRememberPosition","tabletopSnapMovement","tabletopLayoutEnabled","tabletopArtEnabled","tabletopChatEnabled","tabletopCombatEnabled","tabletopChatScale"],
- "Tabletop presentation":["tabletopShowChat","tabletopShowCombat",...Object.values(modeKeys).filter(k=>k.startsWith("tabletopPresentation"))],
+ "Tabletop presentation":["tabletopShowChat","tabletopShowCombat","tabletopInitiativeEnabled","tabletopInitiativePosition","tabletopInitiativeSize",...Object.values(modeKeys).filter(k=>k.startsWith("tabletopPresentation"))],
  Bookmarks:["bookmarkHold","bookmarkIndefinite"],
  Sharing:["sharingDestination"],
  Integration:["integrationGMEnabled","integrationEnabled","integrationRosterOnly","integrationHealth"]
