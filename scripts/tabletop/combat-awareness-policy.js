@@ -31,9 +31,9 @@ export function combatAwareness({encounter,sceneId,lookup,user,skipDefeated=fals
   const i=(index+step)%turns.length;
   if(skipDefeated&&(turns[i].isDefeated||turns[i].defeated))continue;
   // Do not jump over a hidden next turn and mislabel a later combatant.
-  next=names[i];break;
+  next=names[i]??"Hidden Combatant";break;
  }
- return {current:names[index],next,round:Number.isInteger(encounter.round)&&encounter.round>0?encounter.round:null};
+ return {current:names[index]??"Hidden Combatant",next,round:Number.isInteger(encounter.round)&&encounter.round>0?encounter.round:null};
 }
 export function initiativeEdges(position){
  return ({top:["top"],bottom:["bottom"],mirrored:["bottom","top"],four:["bottom","top","left","right"]})[position]??["bottom"];
